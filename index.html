@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chainsaw English - DEBUG v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        :root {
+            --csm-white: #fafafa;
+            --csm-black: #0a0a0a;
+            --csm-orange: #ff6b00;
+            --csm-yellow: #ffd60a;
+            --csm-green: #00c853;
+            --csm-red: #ff1744;
+            --csm-blue: #00b0ff;
+            --csm-purple: #7c4dff;
+            --csm-gray: #2d2d2d;
+        }
+
+        html, body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--csm-black);
+            color: var(--csm-black);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .app-frame {
+            width: 100%;
+            height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--csm-white);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .manga-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.05;
+            background-image: radial-gradient(circle, #000 1px, transparent 1px);
+            background-size: 6px 6px;
+            z-index: 0;
+        }
+
+        .speed-lines {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 150px;
+            pointer-events: none;
+            opacity: 0.1;
+            background: repeating-linear-gradient(-45deg, transparent, transparent 5px, var(--csm-black) 5px, var(--csm-black) 7px);
+            z-index: 1;
+        }
+
+        .page-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            padding: 12px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* ========== 学习页面 ========== */
+        .study-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--csm-black);
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: #e0e0e0;
+            border: 2px solid var(--csm-black);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .mode-btn {
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            font-size: 0.75rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--csm-orange);
+            color: white;
+        }
+
+        .progress-indicator {
+            font-size: 0.85rem;
+            font-weight: 900;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--csm-black);
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            z-index: 10;
+            transition: all 0.2s;
+        }
+
+        .favorite-btn.active {
+            background: var(--csm-yellow);
+        }
+
+        .sentence-card {
+            background: white;
+            border: 3px solid var(--csm-black);
+            padding: 14px;
+            margin-bottom: 10px;
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .sentence-card::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 15px solid var(--csm-black);
+        }
+
+        .sentence-card::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 12px solid white;
+            z-index: 1;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: var(--csm-yellow);
+            border: 2px solid var(--csm-black);
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 900;
+            margin-bottom: 8px;
+            align-self: flex-start;
+            transform: rotate(-2deg);
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+        }
+
+        .sentence-content {
+            background: var(--csm-black);
+            border: 3px solid var(--csm-black);
+            padding: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 复习模式下提示 */
+        .recall-section {
+            background: rgba(255,255,255,0.5);
+            border: 2px solid var(--csm-gray);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .recall-click-area {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .recall-hint {
+            font-size: 0.85rem;
+            color: var(--csm-gray);
+            font-weight: 700;
+        }
+
+        .sentence-en {
+            font-family: 'Noto Sans SC', 'Roboto', sans-serif;
+            font-size: 1.3rem;
+            color: white;
+            margin-bottom: 4px;
+            line-height: 1.3;
+            letter-spacing: 0.5px;
+            text-shadow: 2px 2px 0 rgba(255,107,0,0.5);
+            font-weight: 700;
+        }
+
+        .sentence-cn {
+            font-size: 1.1rem;
+            color: #ccc;
+            font-weight: 700;
+        }
+
+        .sentence-phonetic {
+            font-size: 0.75rem;
+            color: #888;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .hidden-content {
+            filter: blur(8px);
+            user-select: none;
+            opacity: 0.3;
+        }
+
+        .audio-btn {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--csm-black);
+            border-radius: 50%;
+            background: var(--csm-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 3px 3px 0 var(--csm-black);
+            transition: all 0.1s;
+        }
+
+        .audio-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--csm-black);
+        }
+
+        .audio-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--csm-black);
+        }
+
+        .audio-btn.playing {
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .meaning-box {
+            background: #f0f0f0;
+            border-left: 4px solid var(--csm-orange);
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .meaning-title {
+            font-size: 0.6rem;
+            color: #666;
+            margin-bottom: 3px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .meaning-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--csm-black);
+        }
+
+        .example-box {
+            background: white;
+            border: 2px solid var(--csm-black);
+            border-top-width: 4px;
+            border-top-color: var(--csm-orange);
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .example-title {
+            font-size: 0.6rem;
+            color: var(--csm-orange);
+            margin-bottom: 3px;
+            font-weight: 900;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+        }
+
+        .example-en {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--csm-black);
+        }
+
+        .example-cn {
+            font-size: 0.7rem;
+            color: #666;
+        }
+
+        .button-area {
+            margin-top: 6px;
+            padding-top: 8px;
+        }
+
+        .learn-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-arrow-btn {
+            flex: 1;
+            padding: 12px;
+            border: 3px solid var(--csm-black);
+            background: white;
+            font-size: 0.9rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Noto Sans SC', sans-serif;
+            box-shadow: 3px 3px 0 var(--csm-black);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .nav-arrow-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--csm-black);
+        }
+
+        .nav-arrow-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 复习模式 - 回想阶段 */
+        .recall-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .recall-prompt {
+            background: var(--csm-yellow);
+            border: 3px solid var(--csm-black);
+            padding: 12px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 0.9rem;
+        }
+
+        .recall-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .recall-btn {
+            flex: 1;
+            padding: 14px;
+            border: 3px solid var(--csm-black);
+            font-size: 0.9rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Noto Sans SC', sans-serif;
+            box-shadow: 3px 3px 0 var(--csm-black);
+            transition: all 0.1s;
+        }
+
+        .recall-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--csm-black);
+        }
+
+        .recall-btn.yes {
+            background: var(--csm-green);
+            color: white;
+        }
+
+        .recall-btn.no {
+            background: var(--csm-red);
+            color: white;
+        }
+
+        /* 验证阶段 - 纯表情大按钮 */
+        .verify-section {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .verify-section.show {
+            display: flex;
+        }
+
+        .verify-title {
+            display: none;
+        }
+
+        .verify-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .verify-btn {
+            flex: 1;
+            max-width: 80px;
+            aspect-ratio: 1;
+            padding: 0;
+            border: 3px solid var(--csm-black);
+            font-size: 2.5rem;
+            line-height: 1;
+            cursor: pointer;
+            background: white;
+            box-shadow: 4px 4px 0 var(--csm-black);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .verify-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+
+        .verify-btn.mastered {
+            background: linear-gradient(135deg, #00c853 0%, #69f0ae 100%);
+        }
+
+        .verify-btn.fuzzy {
+            background: linear-gradient(135deg, #ffd60a 0%, #fff176 100%);
+        }
+
+        .verify-btn.forgot {
+            background: linear-gradient(135deg, #ff1744 0%, #ff5252 100%);
+        }
+
+        /* ========== 进度页面 ========== */
+        .progress-header {
+            text-align: center;
+            padding: 4px 0;
+            margin-bottom: 6px;
+            border-bottom: 2px solid var(--csm-black);
+            flex-shrink: 0;
+        }
+
+        .progress-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.1rem;
+            color: var(--csm-black);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 var(--csm-orange);
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 2px solid var(--csm-black);
+            padding: 6px 2px;
+            text-align: center;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--csm-orange);
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+        }
+
+        .stat-label {
+            font-size: 0.5rem;
+            color: #666;
+            margin-top: 1px;
+            font-weight: 700;
+        }
+
+        /* 新日历样式 */
+        .calendar-section {
+            background: white;
+            border: 2px solid var(--csm-black);
+            padding: 6px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .calendar-month {
+            font-size: 0.8rem;
+            font-weight: 900;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 1px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .calendar-nav-btn {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--csm-black);
+            background: white;
+            cursor: pointer;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            box-shadow: 2px 2px 0 var(--csm-black);
+            transition: all 0.1s;
+        }
+
+        .calendar-nav-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            gap: 1px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.45rem;
+            font-weight: 900;
+            color: #666;
+            padding: 1px;
+            border-bottom: 1px solid var(--csm-black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            font-weight: 700;
+            border: 1px solid #ddd;
+            background: #f5f5f5;
+            cursor: pointer;
+            position: relative;
+            padding: 1px;
+            min-height: 0;
+        }
+
+        .calendar-day .day-number {
+            font-size: 0.55rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .calendar-day .day-marks {
+            display: flex;
+            gap: 1px;
+            margin-top: 1px;
+            height: 3px;
+        }
+
+        .calendar-day .day-mark {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            border: 1px solid var(--csm-black);
+        }
+
+        .calendar-day.today {
+            border-color: var(--csm-orange);
+            border-width: 2px;
+            background: white;
+        }
+
+        .calendar-day.today .day-number {
+            color: var(--csm-orange);
+            font-size: 0.7rem;
+        }
+
+        .calendar-day.has-learn {
+            background: #e8f5e9;
+            border-color: var(--csm-green);
+        }
+
+        .calendar-day.has-review {
+            background: #e3f2fd;
+            border-color: var(--csm-blue);
+        }
+
+        .calendar-day.has-both {
+            background: linear-gradient(135deg, #e8f5e9 50%, #e3f2fd 50%);
+            border-color: var(--csm-purple);
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .legend {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding-top: 4px;
+            border-top: 1px dashed #ddd;
+            flex-shrink: 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 0.55rem;
+        }
+
+        .legend-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            border: 1px solid var(--csm-black);
+        }
+
+        /* ========== 新型底部导航 ========== */
+        .bottom-nav {
+            display: flex;
+            background: var(--csm-black);
+            padding: 0;
+            z-index: 100;
+            height: 56px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            font-family: 'Noto Sans SC', sans-serif;
+            position: relative;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            width: 80%;
+            height: 3px;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active::before {
+            background: var(--csm-orange);
+        }
+
+        .nav-btn.active {
+            background: #1a1a1a;
+        }
+
+        .nav-icon-svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 2px;
+            fill: #666;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active .nav-icon-svg {
+            fill: var(--csm-orange);
+            transform: scale(1.1);
+        }
+
+        .nav-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active .nav-label {
+            color: var(--csm-orange);
+        }
+
+        /* ========== 弹窗 ========== */
+        .hint-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .hint-overlay.show {
+            display: flex;
+        }
+
+        .hint-content {
+            background: white;
+            border: 4px solid var(--csm-black);
+            padding: 20px;
+            text-align: center;
+            max-width: 280px;
+            box-shadow: 8px 8px 0 var(--csm-orange);
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .hint-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .hint-text {
+            font-size: 0.8rem;
+            margin-bottom: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .hint-close {
+            padding: 8px 24px;
+            border: 3px solid var(--csm-black);
+            background: var(--csm-orange);
+            font-size: 0.85rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Noto Sans SC', sans-serif;
+            box-shadow: 3px 3px 0 var(--csm-black);
+            transition: all 0.1s;
+        }
+
+        .hint-close:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--csm-black);
+        }
+
+        /* 收藏列表 */
+        .favorites-btn {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--csm-black);
+            border-radius: 50%;
+            background: var(--csm-yellow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            z-index: 50;
+            box-shadow: 3px 3px 0 var(--csm-black);
+        }
+
+        .favorites-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            z-index: 2000;
+            padding: 60px 16px 20px;
+            overflow-y: auto;
+        }
+
+        .favorites-overlay.show {
+            display: block;
+        }
+
+        .favorites-header {
+            color: white;
+            font-family: 'Bangers', cursive;
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+        }
+
+        .favorites-close {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border: 2px solid white;
+            border-radius: 50%;
+            background: transparent;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 2001;
+        }
+
+        .favorite-item {
+            background: white;
+            border: 3px solid var(--csm-black);
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .favorite-item-en {
+            font-family: 'Bangers', cursive;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+
+        .favorite-item-cn {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        /* 复习模式切换 */
+        .review-mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+
+        .review-mode-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--csm-black);
+            background: white;
+            font-size: 0.75rem;
+            font-weight: 900;
+            cursor: pointer;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .review-mode-btn.active {
+            background: var(--csm-orange);
+            color: white;
+        }
+
+        /* 今日进度条 */
+        .today-progress {
+            background: white;
+            border: 2px solid var(--csm-black);
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+        }
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border: 1px solid var(--csm-black);
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--csm-orange);
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--csm-black);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-frame">
+        <div class="manga-bg"></div>
+        <div class="speed-lines"></div>
+
+        <button class="favorites-btn" id="favoritesBtn">⭐</button>
+
+        <div class="page-container">
+            <!-- 学习页面 -->
+            <div class="page active" id="studyPage">
+                <div class="study-header">
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" id="modeLearn">📖 学习</button>
+                        <button class="mode-btn" id="modeReview">🎯 复习</button>
+                    </div>
+                    <div class="progress-indicator">
+                        <span id="currentIndex">1</span> / <span id="totalCount">200</span>
+                    </div>
+                </div>
+
+                <div class="sentence-card" id="sentenceCard">
+                    <button class="favorite-btn" id="favoriteBtn">☆</button>
+                    <div class="category-badge" id="sentenceCategory">拍照</div>
+
+                    <div class="sentence-content" id="sentenceContent">
+                        <div class="sentence-en" id="sentenceEn">Good shot!</div>
+                        <div class="sentence-phonetic" id="sentencePhonetic">/ɡʊd ʃɒt/</div>
+                        <div class="sentence-cn hidden-content" id="sentenceCn">拍得真棒！</div>
+                    </div>
+
+                    <button class="audio-btn" id="audioBtn">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+
+                    <div class="meaning-box" id="meaningBox">
+                        <div class="meaning-title">地道释义</div>
+                        <div class="meaning-text" id="sentenceMeaning">拍得真棒！（比长篇大论更自然）</div>
+                    </div>
+
+                    <div class="example-box" id="exampleBox">
+                        <div class="example-title">使用场景</div>
+                        <div class="example-en" id="exampleEn">"Wow, good shot! The sunset looks amazing."</div>
+                        <div class="example-cn" id="exampleCn">哇，拍得真棒！日落看起来太美了。</div>
+                    </div>
+                </div>
+
+                <!-- 学习模式按钮 -->
+                <div class="button-area" id="learnButtons">
+                    <div class="learn-buttons">
+                        <button class="nav-arrow-btn" id="prevBtn">← 上一个</button>
+                        <button class="nav-arrow-btn" id="nextBtn">下一个 →</button>
+                    </div>
+                </div>
+
+                <!-- 复习模式 - 点击提示 -->
+                <div class="button-area recall-section" id="recallSection">
+                    <div class="recall-click-area">
+                        <div class="recall-hint">👆 点击任意位置查看答案</div>
+                    </div>
+                </div>
+
+                <!-- 复习模式 - 评分阶段 -->
+                <div class="button-area verify-section" id="verifySection">
+                    <div class="verify-buttons">
+                        <button class="verify-btn mastered" data-status="mastered" aria-label="全对">😎</button>
+                        <button class="verify-btn fuzzy" data-status="fuzzy" aria-label="有点模糊">😅</button>
+                        <button class="verify-btn forgot" data-status="forgot" aria-label="错了">😵</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进度页面 -->
+            <div class="page" id="progressPage" style="padding: 8px 12px;">
+                <div class="progress-header">
+                    <div class="progress-title">MY PROGRESS</div>
+                </div>
+
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statStreak">0</div>
+                        <div class="stat-label">连续天数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">已学句数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statMastered">0</div>
+                        <div class="stat-label">已掌握</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <div class="calendar-month" id="calendarMonth">2026年3月</div>
+                        <div class="calendar-nav">
+                            <button class="calendar-nav-btn" id="prevMonth">‹</button>
+                            <button class="calendar-nav-btn" id="nextMonth">›</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--csm-green);"></div>
+                            <span>学习</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--csm-blue);"></div>
+                            <span>复习</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--csm-purple);"></div>
+                            <span>都有</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新型底部导航 -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" id="navStudy" data-page="study">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24">
+                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                </svg>
+                <div class="nav-label">学习</div>
+            </button>
+            <button class="nav-btn" id="navProgress" data-page="progress">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                <div class="nav-label">进度</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- 提示弹窗 -->
+    <div class="hint-overlay" id="hintOverlay">
+        <div class="hint-content">
+            <div class="hint-title" id="hintTitle">太棒了！</div>
+            <div class="hint-text" id="hintText">继续加油学习！</div>
+            <button class="hint-close" id="hintClose">继续</button>
+        </div>
+    </div>
+
+    <!-- 收藏列表 -->
+    <div class="favorites-overlay" id="favoritesOverlay">
+        <button class="favorites-close" id="favoritesClose">×</button>
+        <div class="favorites-header">MY FAVORITES</div>
+        <div id="favoritesList"></div>
+    </div>
+
+    <script>
+// 200句澳洲旅游日常用语数据库
+const sentences = [
+    // 1-10: 拍照/赞美
+    { id: 1, category: "拍照", en: "Good shot!", phonetic: "/ɡʊd ʃɒt/", meaning: "拍得真棒！", exampleEn: "Wow, good shot! The sunset looks amazing.", exampleCn: "哇，拍得真棒！日落看起来太美了。" },
+    { id: 2, category: "赞美", en: "Killer view!", phonetic: "/ˈkɪlər vjuː/", meaning: "景色太绝了！", exampleEn: "Look at that beach! Killer view, right?", exampleCn: "看那个海滩！景色绝了，对吧？" },
+    { id: 3, category: "拍照", en: "Mind taking a pic?", phonetic: "/maɪnd ˈteɪkɪŋ ə pɪk/", meaning: "能帮忙拍张照吗？", exampleEn: "Excuse me, mind taking a pic for us?", exampleCn: "打扰一下，能帮我们拍张照吗？" },
+    { id: 4, category: "拍照", en: "Say cheese!", phonetic: "/seɪ tʃiːz/", meaning: "说茄子！", exampleEn: "Everyone smile, say cheese!", exampleCn: "大家笑一笑，说茄子！" },
+    { id: 5, category: "拍照", en: "One more shot", phonetic: "/wʌn mɔːr ʃɒt/", meaning: "再拍一张", exampleEn: "That was blurry, one more shot!", exampleCn: "那张糊了，再拍一张！" },
+    { id: 6, category: "赞美", en: "Instagram worthy!", phonetic: "/ˈɪnstəɡræm ˈwɜːrði/", meaning: "值得发ins！", exampleEn: "This cafe is totally Instagram worthy!", exampleCn: "这家咖啡馆绝对值得发ins！" },
+    { id: 7, category: "赞美", en: "Picture perfect!", phonetic: "/ˈpɪktʃər ˈpɜːrfɪkt/", meaning: "完美得像画一样！", exampleEn: "This spot is picture perfect!", exampleCn: "这个角度完美得像画一样！" },
+    { id: 8, category: "拍照", en: "Get in the frame!", phonetic: "/ɡet ɪn ðə freɪm/", meaning: "进框里来！", exampleEn: "Hey, get in the frame with us!", exampleCn: "嘿，进来跟我们一起拍！" },
+    { id: 9, category: "拍照", en: "That's a keeper!", phonetic: "/ðæts ə ˈkiːpər/", meaning: "这张值得留着！", exampleEn: "Oh wow, that's a keeper for sure!", exampleCn: "哇，这张绝对值得留着！" },
+    { id: 10, category: "赞美", en: "Absolutely stunning!", phonetic: "/ˈæbsəluːtli ˈstʌnɪŋ/", meaning: "太惊艳了！", exampleEn: "These cliffs are absolutely stunning!", exampleCn: "这些悬崖太惊艳了！" },
+
+    // 11-25: 点餐/餐饮
+    { id: 11, category: "点餐", en: "What's good here?", phonetic: "/wɒts ɡʊd hɪər/", meaning: "这儿什么好吃？", exampleEn: "Hey mate, what's good here?", exampleCn: "嘿伙计，这儿什么好吃？" },
+    { id: 12, category: "点餐", en: "I'll have the...", phonetic: "/aɪl hæv ðə/", meaning: "我要点...", exampleEn: "I'll have the fish and chips, thanks.", exampleCn: "我来份炸鱼薯条，谢谢。" },
+    { id: 13, category: "点餐", en: "A flat white, please.", phonetic: "/ə flæt waɪt pliːz/", meaning: "一杯馥芮白", exampleEn: "Can I get a flat white, please?", exampleCn: "我要一杯馥芮白，谢谢。" },
+    { id: 14, category: "点餐", en: "Make it two.", phonetic: "/meɪk ɪt tuː/", meaning: "来两份", exampleEn: "One coffee please. Actually, make it two.", exampleCn: "一杯咖啡。算了，来两杯。" },
+    { id: 15, category: "点餐", en: "The bill, please.", phonetic: "/ðə bɪl pliːz/", meaning: "请结账", exampleEn: "Could we get the bill, please?", exampleCn: "可以给我们结账吗？" },
+    { id: 16, category: "点餐", en: "Keep the change.", phonetic: "/kiːp ðə tʃeɪndʒ/", meaning: "不用找了", exampleEn: "Thanks mate, keep the change.", exampleCn: "谢了伙计，不用找了。" },
+    { id: 17, category: "点餐", en: "Is this gluten-free?", phonetic: "/ɪz ðɪs ˈɡluːtən friː/", meaning: "这个无麸质吗？", exampleEn: "Is this dish gluten-free?", exampleCn: "这道菜是无麸质的吗？" },
+    { id: 18, category: "点餐", en: "I'm allergic to nuts.", phonetic: "/aɪm əˈlɜːrdʒɪk tuː nʌts/", meaning: "我对坚果过敏", exampleEn: "Just so you know, I'm allergic to nuts.", exampleCn: "跟你说一下，我对坚果过敏。" },
+    { id: 19, category: "点餐", en: "Can I get a doggy bag?", phonetic: "/kən aɪ ɡet ə ˈdɒɡi bæɡ/", meaning: "能打包吗？", exampleEn: "This is too much, can I get a doggy bag?", exampleCn: "这太多了，能打包吗？" },
+    { id: 20, category: "点餐", en: "What's the special?", phonetic: "/wɒts ðə ˈspeʃl/", meaning: "今日特餐是什么？", exampleEn: "What's today's special?", exampleCn: "今天有什么特餐？" },
+    { id: 21, category: "点餐", en: "I'll take this to go.", phonetic: "/aɪl teɪk ðɪs tuː ɡəʊ/", meaning: "这个外带", exampleEn: "Can I get this sandwich to go?", exampleCn: "这个三明治外带可以吗？" },
+    { id: 22, category: "点餐", en: "Is tap water okay?", phonetic: "/ɪz tæp ˈwɔːtər əˈkeɪ/", meaning: "自来水可以吗？", exampleEn: "Just tap water is fine, thanks.", exampleCn: "自来水就行，谢谢。" },
+    { id: 23, category: "点餐", en: "Another round!", phonetic: "/əˈnʌðər raʊnd/", meaning: "再来一轮！", exampleEn: "Great beers! Another round!", exampleCn: "啤酒不错！再来一轮！" },
+    { id: 24, category: "点餐", en: "Cheers!", phonetic: "/tʃɪəz/", meaning: "干杯！/谢谢！", exampleEn: "Cheers everyone!", exampleCn: "大家干杯！" },
+    { id: 25, category: "点餐", en: "Bottoms up!", phonetic: "/ˈbɒtəmz ʌp/", meaning: "干杯！（喝完）", exampleEn: "To our trip! Bottoms up!", exampleCn: "为我们的旅行！干杯！" },
+
+    // 26-35: 购物
+    { id: 26, category: "购物", en: "Just looking, thanks.", phonetic: "/dʒʌst ˈlʊkɪŋ θæŋks/", meaning: "就看看，谢谢", exampleEn: "Nah, just looking, thanks.", exampleCn: "不用了，就看看，谢谢。" },
+    { id: 27, category: "购物", en: "Do you have this in medium?", phonetic: "/du ju hæv ðɪs ɪn ˈmiːdiəm/", meaning: "有中号吗？", exampleEn: "Do you have this shirt in medium?", exampleCn: "这件衬衫有中号吗？" },
+    { id: 28, category: "购物", en: "Can I try this on?", phonetic: "/kən aɪ traɪ ðɪs ɒn/", meaning: "能试穿吗？", exampleEn: "Where can I try this on?", exampleCn: "我在哪儿可以试穿这个？" },
+    { id: 29, category: "购物", en: "It's a bit pricey.", phonetic: "/ɪts ə bɪt ˈpraɪsi/", meaning: "有点贵", exampleEn: "I like it but it's a bit pricey.", exampleCn: "我喜欢但有点贵。" },
+    { id: 30, category: "价格", en: "That's a rip-off!", phonetic: "/ðæts ə ˈrɪp ɒf/", meaning: "太贵了吧！", exampleEn: "$50 for a T-shirt? That's a rip-off!", exampleCn: "50澳元一件T恤？太贵了吧！" },
+    { id: 31, category: "购物", en: "Any discount?", phonetic: "/ˈeni ˈdɪskaʊnt/", meaning: "有折扣吗？", exampleEn: "Is there any discount for students?", exampleCn: "学生有折扣吗？" },
+    { id: 32, category: "购物", en: "I'll think about it.", phonetic: "/aɪl θɪŋk əˈbaʊt ɪt/", meaning: "我考虑一下", exampleEn: "Thanks, I'll think about it.", exampleCn: "谢谢，我考虑一下。" },
+    { id: 33, category: "购物", en: "Can I get a receipt?", phonetic: "/kən aɪ ɡet ə rɪˈsiːt/", meaning: "能给我收据吗？", exampleEn: "Could I get a receipt please?", exampleCn: "能给我一张收据吗？" },
+    { id: 34, category: "购物", en: "I'd like a refund.", phonetic: "/aɪd laɪk ə ˈriːfʌnd/", meaning: "我想退款", exampleEn: "This is broken, I'd like a refund.", exampleCn: "这个坏了，我想退款。" },
+    { id: 35, category: "购物", en: "Do you take card?", phonetic: "/du ju teɪk kɑːrd/", meaning: "可以刷卡吗？", exampleEn: "Do you take card or cash only?", exampleCn: "可以刷卡还是只能现金？" },
+
+    // 36-45: 问路/交通
+    { id: 36, category: "问路", en: "How do I get to...?", phonetic: "/haʊ du aɪ ɡet tu/", meaning: "怎么去...？", exampleEn: "How do I get to the Opera House?", exampleCn: "歌剧院怎么走？" },
+    { id: 37, category: "问路", en: "Is it far?", phonetic: "/ɪz ɪt fɑːr/", meaning: "远吗？", exampleEn: "Is it far from here? Can I walk?", exampleCn: "离这儿远吗？我能走过去吗？" },
+    { id: 38, category: "问路", en: "Can you point me to...?", phonetic: "/kən ju pɔɪnt mi tu/", meaning: "能指给我...在哪吗？", exampleEn: "Can you point me to the nearest toilet?", exampleCn: "能指给我最近的厕所在哪吗？" },
+    { id: 39, category: "交通", en: "Catch the tram", phonetic: "/kætʃ ðə træm/", meaning: "坐电车", exampleEn: "Let's catch the tram to the city.", exampleCn: "我们坐电车去市中心吧。" },
+    { id: 40, category: "交通", en: "Where's the nearest station?", phonetic: "/weərz ðə ˈnɪəriət ˈsteɪʃn/", meaning: "最近的车站在哪？", exampleEn: "Where's the nearest train station?", exampleCn: "最近的火车站在哪？" },
+    { id: 41, category: "交通", en: "How much is the fare?", phonetic: "/haʊ mʌtʃ ɪz ðə feər/", meaning: "票价多少？", exampleEn: "How much is the fare to Bondi?", exampleCn: "去邦迪的票价多少？" },
+    { id: 42, category: "交通", en: "Does this go to...?", phonetic: "/dʌz ðɪs ɡəʊ tu/", meaning: "这趟车去...吗？", exampleEn: "Does this bus go to the airport?", exampleCn: "这趟公交车去机场吗？" },
+    { id: 43, category: "交通", en: "I'd like a return ticket.", phonetic: "/aɪd laɪk ə rɪˈtɜːn ˈtɪkɪt/", meaning: "我要往返票", exampleEn: "One return ticket to Melbourne please.", exampleCn: "一张去墨尔本的往返票。" },
+    { id: 44, category: "交通", en: "Mind the gap!", phonetic: "/maɪnd ðə ɡæp/", meaning: "小心间隙！", exampleEn: "Please mind the gap between train and platform.", exampleCn: "请小心列车与站台之间的间隙。" },
+    { id: 45, category: "交通", en: "Tap on, tap off.", phonetic: "/tæp ɒn tæp ɒf/", meaning: "刷卡上下车", exampleEn: "Remember to tap on and tap off.", exampleCn: "记得上车刷卡，下车也刷卡。" },
+
+    // 46-60: 打招呼/日常
+    { id: 46, category: "问候", en: "G'day mate!", phonetic: "/ɡəˈdeɪ meɪt/", meaning: "你好啊伙计！", exampleEn: "G'day mate! How's it going?", exampleCn: "你好啊！最近咋样？" },
+    { id: 47, category: "问候", en: "How ya going?", phonetic: "/haʊ jə ˈɡəʊɪŋ/", meaning: "你好吗？", exampleEn: "How ya going? All good?", exampleCn: "你好吗？一切都好吧？" },
+    { id: 48, category: "回应", en: "No worries!", phonetic: "/nəʊ ˈwʌriz/", meaning: "没事！/没问题！", exampleEn: "Thanks for helping! No worries!", exampleCn: "谢谢帮忙！没事！" },
+    { id: 49, category: "告别", en: "See ya!", phonetic: "/siː jə/", meaning: "再见！", exampleEn: "See ya later! Have a good one!", exampleCn: "回头见！祝你愉快！" },
+    { id: 50, category: "赞同", en: "Too easy!", phonetic: "/tuː ˈiːzi/", meaning: "太简单了！/没问题！", exampleEn: "Can you help me with this? Too easy!", exampleCn: "能帮个忙吗？小菜一碟！" },
+    { id: 51, category: "日常", en: "No dramas!", phonetic: "/nəʊ ˈdrɑːməz/", meaning: "没问题！", exampleEn: "Can I pay later? No dramas!", exampleCn: "我能晚点付钱吗？没问题！" },
+    { id: 52, category: "日常", en: "She'll be right.", phonetic: "/ʃiːl biː raɪt/", meaning: "会没事的", exampleEn: "Don't worry, she'll be right.", exampleCn: "别担心，会没事的。" },
+    { id: 53, category: "日常", en: "Fair dinkum!", phonetic: "/feər ˈdɪŋkəm/", meaning: "真的！/货真价实！", exampleEn: "Fair dinkum? You saw a kangaroo?", exampleCn: "真的吗？你看到袋鼠了？" },
+    { id: 54, category: "日常", en: "That's bonzer!", phonetic: "/ðæts ˈbɒnzər/", meaning: "太棒了！", exampleEn: "We got tickets? That's bonzer!", exampleCn: "我们买到票了？太棒了！" },
+    { id: 55, category: "日常", en: "You beauty!", phonetic: "/juː ˈbjuːti/", meaning: "太棒了！", exampleEn: "You beauty! We made it!", exampleCn: "太棒了！我们成功了！" },
+    { id: 56, category: "日常", en: "Good on ya!", phonetic: "/ɡʊd ɒn jə/", meaning: "做得好！", exampleEn: "You finished the hike? Good on ya!", exampleCn: "你走完徒步了？做得好！" },
+    { id: 57, category: "日常", en: "Strewth!", phonetic: "/struːθ/", meaning: "天哪！", exampleEn: "Strewth! That's expensive!", exampleCn: "天哪！那太贵了！" },
+    { id: 58, category: "日常", en: "Bob's your uncle!", phonetic: "/bɒbz jɔːr ˈʌŋkl/", meaning: "搞定了！/就这么简单！", exampleEn: "Just press here and Bob's your uncle!", exampleCn: "按这里就行了，搞定！" },
+    { id: 59, category: "日常", en: "Having a whinge", phonetic: "/ˈhævɪŋ ə wɪndʒ/", meaning: "抱怨", exampleEn: "Stop having a whinge and enjoy it!", exampleCn: "别抱怨了，好好享受吧！" },
+    { id: 60, category: "日常", en: "Chuck a sickie", phonetic: "/tʃʌk ə ˈsɪki/", meaning: "装病请假", exampleEn: "He's chucking a sickie today.", exampleCn: "他今天装病请假了。" },
+
+    // 61-75: 时间/天气
+    { id: 61, category: "时间", en: "Arvo", phonetic: "/ˈɑːvəʊ/", meaning: "下午", exampleEn: "See ya this arvo!", exampleCn: "下午见！" },
+    { id: 62, category: "时间", en: "Brekkie", phonetic: "/ˈbreki/", meaning: "早餐", exampleEn: "Let's grab some brekkie.", exampleCn: "我们去吃点早餐吧。" },
+    { id: 63, category: "时间", en: "Smoko", phonetic: "/ˈsməʊkəʊ/", meaning: "休息/茶歇", exampleEn: "Time for smoko!", exampleCn: "休息时间到了！" },
+    { id: 64, category: "天气", en: "It's stinking hot!", phonetic: "/ɪts ˈstɪŋkɪŋ hɒt/", meaning: "热死了！", exampleEn: "It's stinking hot today!", exampleCn: "今天热死了！" },
+    { id: 65, category: "天气", en: "Freezing cold!", phonetic: "/ˈfriːzɪŋ kəʊld/", meaning: "冷死了！", exampleEn: "It's freezing cold in Melbourne!", exampleCn: "墨尔本冷死了！" },
+    { id: 66, category: "天气", en: "Pissing down", phonetic: "/ˈpɪsɪŋ daʊn/", meaning: "下大雨", exampleEn: "It's pissing down outside!", exampleCn: "外面在下大雨！" },
+    { id: 67, category: "天气", en: "Beautiful day!", phonetic: "/ˈbjuːtɪfl deɪ/", meaning: "天气真好！", exampleEn: "What a beautiful day for the beach!", exampleCn: "去海滩的好天气！" },
+    { id: 68, category: "天气", en: "Bloody humid!", phonetic: "/ˈblʌdi ˈhjuːmɪd/", meaning: "真潮湿！", exampleEn: "It's bloody humid today!", exampleCn: "今天真潮湿！" },
+    { id: 69, category: "天气", en: "Cracker of a day!", phonetic: "/ˈkrækər əv ə deɪ/", meaning: "天气棒极了！", exampleEn: "What a cracker of a day!", exampleCn: "天气棒极了！" },
+    { id: 70, category: "天气", en: "Sun's out, guns out!", phonetic: "/sʌnz aʊt ɡʌnz aʊt/", meaning: "出太阳了，该秀身材了！", exampleEn: "Time to hit the beach, sun's out guns out!", exampleCn: "该去海滩了，出太阳秀身材！" },
+    { id: 71, category: "数量", en: "Heaps of...", phonetic: "/hiːps əv/", meaning: "很多...", exampleEn: "There are heaps of people here.", exampleCn: "这儿人好多啊。" },
+    { id: 72, category: "数量", en: "A few snags", phonetic: "/ə fjuː snæɡz/", meaning: "几根香肠", exampleEn: "Grab a few snags for the BBQ!", exampleCn: "拿几根香肠来烧烤！" },
+    { id: 73, category: "时间", en: "In a tick", phonetic: "/ɪn ə tɪk/", meaning: "马上/很快", exampleEn: "I'll be there in a tick!", exampleCn: "我马上到！" },
+    { id: 74, category: "时间", en: "This arvo", phonetic: "/ðɪs ˈɑːvəʊ/", meaning: "今天下午", exampleEn: "Let's meet this arvo.", exampleCn: "我们今天下午见。" },
+    { id: 75, category: "时间", en: "Knock off work", phonetic: "/nɒk ɒf wɜːrk/", meaning: "下班", exampleEn: "I knock off work at 5.", exampleCn: "我5点下班。" },
+
+    // 76-85: 住宿
+    { id: 76, category: "住宿", en: "Do you have vacancies?", phonetic: "/du ju hæv ˈveɪkənsiz/", meaning: "有空房吗？", exampleEn: "Do you have vacancies for tonight?", exampleCn: "今晚有空房吗？" },
+    { id: 77, category: "住宿", en: "I'd like to check in.", phonetic: "/aɪd laɪk tuː tʃek ɪn/", meaning: "我要办理入住", exampleEn: "Hi, I'd like to check in.", exampleCn: "你好，我要办理入住。" },
+    { id: 78, category: "住宿", en: "I'd like to check out.", phonetic: "/aɪd laɪk tuː tʃek aʊt/", meaning: "我要退房", exampleEn: "I'd like to check out please.", exampleCn: "我要退房，谢谢。" },
+    { id: 79, category: "住宿", en: "What time is checkout?", phonetic: "/wɒt taɪm ɪz ˈtʃekaʊt/", meaning: "几点退房？", exampleEn: "What time is checkout tomorrow?", exampleCn: "明天几点退房？" },
+    { id: 80, category: "住宿", en: "Is breakfast included?", phonetic: "/ɪz ˈbrekfəst ɪnˈkluːdɪd/", meaning: "含早餐吗？", exampleEn: "Is breakfast included in the price?", exampleCn: "价格含早餐吗？" },
+    { id: 81, category: "住宿", en: "The WiFi isn't working.", phonetic: "/ðə ˈwaɪfaɪ ˈɪznt ˈwɜːrkɪŋ/", meaning: "WiFi坏了", exampleEn: "Excuse me, the WiFi isn't working.", exampleCn: "打扰一下，WiFi坏了。" },
+    { id: 82, category: "住宿", en: "Can I get an extra towel?", phonetic: "/kən aɪ ɡet ən ˈekstrə ˈtaʊəl/", meaning: "能多给条毛巾吗？", exampleEn: "Could I get an extra towel?", exampleCn: "能多给我一条毛巾吗？" },
+    { id: 83, category: "住宿", en: "The aircon is too cold.", phonetic: "/ðə ˈeərkɒn ɪz tuː kəʊld/", meaning: "空调太冷了", exampleEn: "Can you turn up the aircon? It's too cold.", exampleCn: "能把空调调高点吗？太冷了。" },
+    { id: 84, category: "住宿", en: "Do you have a safe?", phonetic: "/du ju hæv ə seɪf/", meaning: "有保险箱吗？", exampleEn: "Do you have a safe in the room?", exampleCn: "房间里有保险箱吗？" },
+    { id: 85, category: "住宿", en: "I'd like a wake-up call.", phonetic: "/aɪd laɪk ə ˈweɪkʌp kɔːl/", meaning: "我要叫醒服务", exampleEn: "Can I get a wake-up call at 7am?", exampleCn: "能7点叫我起床吗？" },
+
+    // 86-95: 紧急情况
+    { id: 86, category: "紧急", en: "I need help!", phonetic: "/aɪ niːd help/", meaning: "我需要帮助！", exampleEn: "Excuse me, I need help!", exampleCn: "打扰一下，我需要帮助！" },
+    { id: 87, category: "紧急", en: "Call an ambulance!", phonetic: "/kɔːl ən ˈæmbjələns/", meaning: "叫救护车！", exampleEn: "Quick, call an ambulance!", exampleCn: "快，叫救护车！" },
+    { id: 88, category: "紧急", en: "Call the police!", phonetic: "/kɔːl ðə pəˈliːs/", meaning: "报警！", exampleEn: "Someone stole my bag! Call the police!", exampleCn: "有人偷了我的包！报警！" },
+    { id: 89, category: "医疗", en: "I feel sick.", phonetic: "/aɪ fiːl sɪk/", meaning: "我不舒服/想吐", exampleEn: "I feel sick. Is there a pharmacy?", exampleCn: "我不舒服。附近有药店吗？" },
+    { id: 90, category: "医疗", en: "Where's the hospital?", phonetic: "/weərz ðə ˈhɒspɪtl/", meaning: "医院在哪？", exampleEn: "Where's the nearest hospital?", exampleCn: "最近的医院在哪？" },
+    { id: 91, category: "紧急", en: "I've lost my passport.", phonetic: "/aɪv lɒst maɪ ˈpɑːspɔːrt/", meaning: "我护照丢了", exampleEn: "Help! I've lost my passport!", exampleCn: "救命！我护照丢了！" },
+    { id: 92, category: "紧急", en: "My wallet was stolen.", phonetic: "/maɪ ˈwɒlɪt wəz ˈstəʊlən/", meaning: "我的钱包被偷了", exampleEn: "My wallet was stolen at the beach.", exampleCn: "我的钱包在海滩被偷了。" },
+    { id: 93, category: "紧急", en: "I need a doctor.", phonetic: "/aɪ niːd ə ˈdɒktər/", meaning: "我需要医生", exampleEn: "I need a doctor urgently.", exampleCn: "我急需医生。" },
+    { id: 94, category: "紧急", en: "It's an emergency!", phonetic: "/ɪts ən ɪˈmɜːrdʒənsi/", meaning: "紧急情况！", exampleEn: "Please help, it's an emergency!", exampleCn: "请帮忙，是紧急情况！" },
+    { id: 95, category: "紧急", en: "Where's the embassy?", phonetic: "/weərz ði ˈembəsi/", meaning: "大使馆在哪？", exampleEn: "Where's the Chinese embassy?", exampleCn: "中国大使馆在哪？" },
+
+    // 96-110: 社交/闲聊
+    { id: 96, category: "社交", en: "Where are you from?", phonetic: "/weər ɑːr ju frɒm/", meaning: "你从哪里来？", exampleEn: "Where are you from in China?", exampleCn: "你从中国的哪里来？" },
+    { id: 97, category: "社交", en: "How long are you here?", phonetic: "/haʊ lɒŋ ɑːr ju hɪər/", meaning: "你在这待多久？", exampleEn: "How long are you here for?", exampleCn: "你在这待多久？" },
+    { id: 98, category: "社交", en: "What do you recommend?", phonetic: "/wɒt du ju ˌrekəˈmend/", meaning: "你有什么推荐？", exampleEn: "What do you recommend to see?", exampleCn: "你有什么推荐的景点？" },
+    { id: 99, category: "社交", en: "That's hilarious!", phonetic: "/ðæts hɪˈleəriəs/", meaning: "太搞笑了！", exampleEn: "That's hilarious! Tell me more!", exampleCn: "太搞笑了！再讲点！" },
+    { id: 100, category: "社交", en: "You're kidding!", phonetic: "/jʊər ˈkɪdɪŋ/", meaning: "你在开玩笑吧！", exampleEn: "You met a celebrity? You're kidding!", exampleCn: "你遇到名人了？开玩笑吧！" },
+    { id: 101, category: "社交", en: "Long time no see!", phonetic: "/lɒŋ taɪm nəʊ siː/", meaning: "好久不见！", exampleEn: "Hey mate! Long time no see!", exampleCn: "嘿伙计！好久不见！" },
+    { id: 102, category: "社交", en: "Fancy seeing you here!", phonetic: "/ˈfænsi ˈsiːɪŋ ju hɪər/", meaning: "真巧在这遇见你！", exampleEn: "Fancy seeing you here in Sydney!", exampleCn: "真巧在悉尼遇见你！" },
+    { id: 103, category: "社交", en: "Small world!", phonetic: "/smɔːl wɜːrld/", meaning: "世界真小！", exampleEn: "You know him too? Small world!", exampleCn: "你也认识他？世界真小！" },
+    { id: 104, category: "社交", en: "Let's grab a drink!", phonetic: "/lets ɡræb ə drɪŋk/", meaning: "去喝一杯吧！", exampleEn: "Let's grab a drink after work!", exampleCn: "下班去喝一杯吧！" },
+    { id: 105, category: "社交", en: "My shout!", phonetic: "/maɪ ʃaʊt/", meaning: "我请客！", exampleEn: "Put your wallet away, my shout!", exampleCn: "把钱包收起来，我请客！" },
+    { id: 106, category: "社交", en: "Going to the footy?", phonetic: "/ˈɡəʊɪŋ tuː ðə ˈfʊti/", meaning: "去看澳式足球吗？", exampleEn: "You going to the footy this weekend?", exampleCn: "这周末去看澳式足球吗？" },
+    { id: 107, category: "社交", en: "How good is this?", phonetic: "/haʊ ɡʊd ɪz ðɪs/", meaning: "这多棒啊！", exampleEn: "How good is this view?", exampleCn: "这景色多棒啊！" },
+    { id: 108, category: "社交", en: "Bloody oath!", phonetic: "/ˈblʌdi əʊθ/", meaning: "当然！/绝对！", exampleEn: "Want another beer? Bloody oath!", exampleCn: "再来杯啤酒？当然！" },
+    { id: 109, category: "社交", en: "Taking the piss", phonetic: "/ˈteɪkɪŋ ðə pɪs/", meaning: "开玩笑/取笑", exampleEn: "Are you taking the piss?", exampleCn: "你在开玩笑吧？" },
+    { id: 110, category: "社交", en: "Keen as mustard", phonetic: "/kiːn æz ˈmʌstərd/", meaning: "非常想做", exampleEn: "I'm keen as mustard to try surfing!", exampleCn: "我超想试试冲浪！" },
+
+    // 111-125: 景点/活动
+    { id: 111, category: "景点", en: "Where's the loo?", phonetic: "/weərz ðə luː/", meaning: "厕所在哪？", exampleEn: "Excuse me, where's the loo?", exampleCn: "打扰一下，厕所在哪？" },
+    { id: 112, category: "景点", en: "Is it worth it?", phonetic: "/ɪz ɪt wɜːrθ ɪt/", meaning: "值得去吗？", exampleEn: "Is the tour worth it?", exampleCn: "这个旅行团值得去吗？" },
+    { id: 113, category: "景点", en: "What's the go?", phonetic: "/wɒts ðə ɡəʊ/", meaning: "怎么回事？/什么情况？", exampleEn: "There's a queue, what's the go?", exampleCn: "在排队，什么情况？" },
+    { id: 114, category: "活动", en: "Let's hit the beach!", phonetic: "/lets hɪt ðə biːtʃ/", meaning: "去海滩吧！", exampleEn: "It's sunny, let's hit the beach!", exampleCn: "出太阳了，去海滩吧！" },
+    { id: 115, category: "活动", en: "Fancy a swim?", phonetic: "/ˈfænsi ə swɪm/", meaning: "想游泳吗？", exampleEn: "It's hot, fancy a swim?", exampleCn: "天热，想游泳吗？" },
+    { id: 116, category: "活动", en: "Go for a bushwalk", phonetic: "/ɡəʊ fɔːr ə ˈbʊʃwɔːk/", meaning: "去丛林徒步", exampleEn: "Let's go for a bushwalk in the Blue Mountains.", exampleCn: "我们去蓝山丛林徒步吧。" },
+    { id: 117, category: "活动", en: "Have a barbie", phonetic: "/hæv ə ˈbɑːbi/", meaning: "烧烤", exampleEn: "Come over for a barbie on Saturday!", exampleCn: "周六来烧烤吧！" },
+    { id: 118, category: "活动", en: "Watch the cricket", phonetic: "/wɒtʃ ðə ˈkrɪkɪt/", meaning: "看板球", exampleEn: "Aussies love to watch the cricket.", exampleCn: "澳洲人爱看板球。" },
+    { id: 119, category: "活动", en: "Go snorkelling", phonetic: "/ɡəʊ ˈsnɔːrkəlɪŋ/", meaning: "去浮潜", exampleEn: "Let's go snorkelling at the reef!", exampleCn: "我们去大堡礁浮潜吧！" },
+    { id: 120, category: "活动", en: "Spot some roos", phonetic: "/spɒt sʌm ruːz/", meaning: "看袋鼠", exampleEn: "We might spot some roos at sunset.", exampleCn: "日落时我们可能会看到袋鼠。" },
+    { id: 121, category: "活动", en: "Feed the quokkas", phonetic: "/fiːd ðə ˈkwɒkəz/", meaning: "喂短尾矮袋鼠", exampleEn: "Rottnest Island is famous for feeding quokkas.", exampleCn: "罗特尼斯岛以喂短尾矮袋鼠闻名。" },
+    { id: 122, category: "活动", en: "See the footy", phonetic: "/siː ðə ˈfʊti/", meaning: "看澳式足球", exampleEn: "Have you ever seen the footy?", exampleCn: "你看过澳式足球吗？" },
+    { id: 123, category: "活动", en: "Do the BridgeClimb", phonetic: "/duː ðə ˈbrɪdʒklaɪm/", meaning: "爬海港大桥", exampleEn: "We're doing the BridgeClimb tomorrow!", exampleCn: "我们明天去爬海港大桥！" },
+    { id: 124, category: "活动", en: "Watch the fireworks", phonetic: "/wɒtʃ ðə ˈfaɪərwɜːrks/", meaning: "看烟花", exampleEn: "Best spot to watch the fireworks?", exampleCn: "看烟花的最佳地点是？" },
+    { id: 125, category: "活动", en: "Go wine tasting", phonetic: "/ɡəʊ waɪn ˈteɪstɪŋ/", meaning: "去品酒", exampleEn: "Barossa Valley is great for wine tasting.", exampleCn: "巴罗萨谷很适合品酒。" },
+
+    // 126-140: 评价/反馈
+    { id: 126, category: "评价", en: "Beautiful!", phonetic: "/ˈbjuːtɪfl/", meaning: "太好了！/真棒！", exampleEn: "You got the tickets? Beautiful!", exampleCn: "你买到票了？太棒了！" },
+    { id: 127, category: "评价", en: "Unreal!", phonetic: "/ʌnˈriːl/", meaning: "不可思议！", exampleEn: "That wave was unreal!", exampleCn: "那浪太不可思议了！" },
+    { id: 128, category: "评价", en: "Fully sick!", phonetic: "/ˈfʊlli sɪk/", meaning: "太酷了！", exampleEn: "Your car is fully sick, mate!", exampleCn: "你的车太酷了，伙计！" },
+    { id: 129, category: "评价", en: "True blue!", phonetic: "/truː bluː/", meaning: "地道的/真正的", exampleEn: "He's a true blue Aussie.", exampleCn: "他是个地道的澳洲人。" },
+    { id: 130, category: "评价", en: "Ripper!", phonetic: "/ˈrɪpər/", meaning: "极好的！", exampleEn: "That was a ripper of a game!", exampleCn: "那场比赛棒极了！" },
+    { id: 131, category: "评价", en: "Ace!", phonetic: "/eɪs/", meaning: "一流的！", exampleEn: "Ace work, mate!", exampleCn: "干得漂亮，伙计！" },
+    { id: 132, category: "评价", en: "Rubbish!", phonetic: "/ˈrʌbɪʃ/", meaning: "垃圾！/胡说！", exampleEn: "That's absolute rubbish!", exampleCn: "那完全是胡说！" },
+    { id: 133, category: "评价", en: "Dodgy", phonetic: "/ˈdɒdʒi/", meaning: "可疑的/不靠谱的", exampleEn: "That guy looks a bit dodgy.", exampleCn: "那家伙看起来有点可疑。" },
+    { id: 134, category: "评价", en: "Shithouse", phonetic: "/ˈʃɪthaʊs/", meaning: "糟糕透了", exampleEn: "The weather is shithouse today.", exampleCn: "今天天气糟糕透了。" },
+    { id: 135, category: "评价", en: "Average", phonetic: "/ˈævərɪdʒ/", meaning: "一般般", exampleEn: "The food was pretty average.", exampleCn: "食物一般般。" },
+    { id: 136, category: "评价", en: "Not bad!", phonetic: "/nɒt bæd/", meaning: "不错！", exampleEn: "This coffee's not bad!", exampleCn: "这咖啡不错！" },
+    { id: 137, category: "评价", en: "Mad as a cut snake", phonetic: "/mæd æz ə kʌt sneɪk/", meaning: "疯狂/愤怒", exampleEn: "He went mad as a cut snake!", exampleCn: "他气疯了！" },
+    { id: 138, category: "评价", en: "Built like a brick shithouse", phonetic: "/bɪlt laɪk ə brɪk ˈʃɪthaʊs/", meaning: "身材魁梧", exampleEn: "That bloke's built like a brick shithouse!", exampleCn: "那家伙身材真魁梧！" },
+    { id: 139, category: "评价", en: "Dry as a dead dingo's donger", phonetic: "/draɪ æz ə ded ˈdɪŋɡəʊz ˈdɒŋər/", meaning: "口渴死了", exampleEn: "I'm dry as a dead dingo's donger!", exampleCn: "我口渴死了！" },
+    { id: 140, category: "评价", en: "Useful as an ashtray on a motorbike", phonetic: "/ˈjuːsfl æz ən ˈæʃtreɪ ɒn ə ˈməʊtərbaɪk/", meaning: "屁用没有", exampleEn: "That tool is as useful as an ashtray on a motorbike.", exampleCn: "那工具屁用没有。" },
+
+    // 141-155: 方向/地点
+    { id: 141, category: "方向", en: "Just up the road", phonetic: "/dʒʌst ʌp ðə rəʊd/", meaning: "就在路前面", exampleEn: "The pub is just up the road.", exampleCn: "酒吧就在路前面。" },
+    { id: 142, category: "方向", en: "Over yonder", phonetic: "/ˈəʊvər ˈjɒndər/", meaning: "在那边", exampleEn: "See that hill over yonder?", exampleCn: "看到那边的山了吗？" },
+    { id: 143, category: "方向", en: "Around the corner", phonetic: "/əˈraʊnd ðə ˈkɔːrnər/", meaning: "在拐角处", exampleEn: "The shop is just around the corner.", exampleCn: "商店就在拐角处。" },
+    { id: 144, category: "方向", en: "Back of Bourke", phonetic: "/bæk əv bɜːrk/", meaning: "偏远地区", exampleEn: "He lives back of Bourke.", exampleCn: "他住在偏远地区。" },
+    { id: 145, category: "方向", en: "In the middle of nowhere", phonetic: "/ɪn ðə ˈmɪdl əv ˈnəʊweər/", meaning: "在荒郊野外", exampleEn: "Our car broke down in the middle of nowhere!", exampleCn: "我们的车在荒郊野外抛锚了！" },
+    { id: 146, category: "方向", en: "Five minutes away", phonetic: "/faɪv ˈmɪnɪts əˈweɪ/", meaning: "五分钟路程", exampleEn: "The beach is five minutes away.", exampleCn: "海滩就五分钟路程。" },
+    { id: 147, category: "方向", en: "Straight ahead", phonetic: "/streɪt əˈhed/", meaning: "直走", exampleEn: "Go straight ahead, you can't miss it.", exampleCn: "直走，你不会错过的。" },
+    { id: 148, category: "方向", en: "Opposite the station", phonetic: "/ˈɒpəzɪt ðə ˈsteɪʃn/", meaning: "车站对面", exampleEn: "It's opposite the station.", exampleCn: "它在车站对面。" },
+    { id: 149, category: "方向", en: "Next to the servo", phonetic: "/nekst tuː ðə ˈsɜːvəʊ/", meaning: "加油站旁边", exampleEn: "Meet me next to the servo.", exampleCn: "在加油站旁边见我。" },
+    { id: 150, category: "方向", en: "Near the bottle-o", phonetic: "/nɪər ðə ˈbɒtləʊ/", meaning: "卖酒商店附近", exampleEn: "It's near the bottle-o.", exampleCn: "它在卖酒商店附近。" },
+    { id: 151, category: "地点", en: "The outback", phonetic: "/ði ˈaʊtbæk/", meaning: "澳洲内陆", exampleEn: "We're driving through the outback.", exampleCn: "我们要开车穿越澳洲内陆。" },
+    { id: 152, category: "地点", en: "The bush", phonetic: "/ðə bʊʃ/", meaning: "丛林/野外", exampleEn: "He lives out in the bush.", exampleCn: "他住在野外。" },
+    { id: 153, category: "地点", en: "The coast", phonetic: "/ðə kəʊst/", meaning: "海岸", exampleEn: "Let's drive up the coast.", exampleCn: "我们开车沿海岸走吧。" },
+    { id: 154, category: "地点", en: "The top end", phonetic: "/ðə tɒp end/", meaning: "澳洲北部", exampleEn: "Crocodiles are common in the top end.", exampleCn: "鳄鱼在澳洲北部很常见。" },
+    { id: 155, category: "地点", en: "Down south", phonetic: "/daʊn saʊθ/", meaning: "去南方", exampleEn: "I'm heading down south for winter.", exampleCn: "我要去南方过冬。" },
+
+    // 156-170: 食物/饮品
+    { id: 156, category: "食物", en: " snag", phonetic: "/snæɡ/", meaning: "香肠", exampleEn: "Throw another snag on the barbie!", exampleCn: "再扔根香肠上烤架！" },
+    { id: 157, category: "食物", en: "Vegemite", phonetic: "/ˈvedʒɪmaɪt/", meaning: "澳洲酱", exampleEn: "Want some Vegemite on toast?", exampleCn: "吐司上要涂点 Vegemite 吗？" },
+    { id: 158, category: "食物", en: "Pavlova", phonetic: "/pævˈləʊvə/", meaning: "奶油蛋白甜饼", exampleEn: "Mum made a pavlova for Christmas.", exampleCn: "妈妈做了奶油蛋白甜饼过圣诞。" },
+    { id: 159, category: "食物", en: "Meat pie", phonetic: "/miːt paɪ/", meaning: "肉馅饼", exampleEn: "Grab a meat pie at the footy.", exampleCn: "在球场买个肉馅饼吃。" },
+    { id: 160, category: "食物", en: "Fish and chips", phonetic: "/fɪʃ ənd tʃɪps/", meaning: "炸鱼薯条", exampleEn: "Best fish and chips in town!", exampleCn: "城里最好吃的炸鱼薯条！" },
+    { id: 161, category: "食物", en: "Sausage roll", phonetic: "/ˈsɒsɪdʒ rəʊl/", meaning: "香肠卷", exampleEn: "I'll have a sausage roll thanks.", exampleCn: "我要个香肠卷，谢谢。" },
+    { id: 162, category: "食物", en: "Tim Tams", phonetic: "/tɪm tæmz/", meaning: "澳洲巧克力饼干", exampleEn: "Bring back some Tim Tams!", exampleCn: "带些 Tim Tams 回来！" },
+    { id: 163, category: "饮品", en: "Long black", phonetic: "/lɒŋ blæk/", meaning: "长黑咖啡", exampleEn: "Can I get a long black please?", exampleCn: "请给我一杯长黑咖啡？" },
+    { id: 164, category: "饮品", en: "Short black", phonetic: "/ʃɔːrt blæk/", meaning: "浓缩咖啡", exampleEn: "I'll have a short black.", exampleCn: "我来杯浓缩咖啡。" },
+    { id: 165, category: "饮品", en: "Iced coffee", phonetic: "/aɪst ˈkɒfi/", meaning: "冰咖啡", exampleEn: "It's hot, get an iced coffee!", exampleCn: "天热，来杯冰咖啡！" },
+    { id: 166, category: "饮品", en: "Middy", phonetic: "/ˈmɪdi/", meaning: "中杯啤酒", exampleEn: "Just a middy thanks.", exampleCn: "就要中杯啤酒，谢谢。" },
+    { id: 167, category: "饮品", en: "Schooner", phonetic: "/ˈskuːnər/", meaning: "大杯啤酒", exampleEn: "Can I get a schooner?", exampleCn: "能给我来大杯啤酒吗？" },
+    { id: 168, category: "饮品", en: "Shout a round", phonetic: "/ʃaʊt ə raʊnd/", meaning: "请一轮酒", exampleEn: "I'll shout a round for everyone!", exampleCn: "我请大家一轮！" },
+    { id: 169, category: "饮品", en: "BYO", phonetic: "/biː waɪ əʊ/", meaning: "自带酒水", exampleEn: "Is this restaurant BYO?", exampleCn: "这家餐厅可以自带酒水吗？" },
+    { id: 170, category: "食物", en: "Bikkie", phonetic: "/ˈbɪki/", meaning: "饼干", exampleEn: "Fancy a bikkie with your tea?", exampleCn: "喝茶要来块饼干吗？" },
+
+    // 171-185: 购物/消费
+    { id: 171, category: "结账", en: "Split the bill?", phonetic: "/splɪt ðə bɪl/", meaning: "AA制吗？", exampleEn: "Should we split the bill?", exampleCn: "我们要AA吗？" },
+    { id: 172, category: "结账", en: "Put it on one bill", phonetic: "/pʊt ɪt ɒn wʌn bɪl/", meaning: "一起结账", exampleEn: "Can you put it all on one bill?", exampleCn: "能一起结账吗？" },
+    { id: 173, category: "购物", en: "What's the damage?", phonetic: "/wɒts ðə ˈdæmɪdʒ/", meaning: "多少钱？", exampleEn: "What's the damage for all this?", exampleCn: "这些一共多少钱？" },
+    { id: 174, category: "购物", en: "Cheaper than chips", phonetic: "/ˈtʃiːpər ðən tʃɪps/", meaning: "比薯片还便宜", exampleEn: "This deal is cheaper than chips!", exampleCn: "这个优惠比薯片还便宜！" },
+    { id: 175, category: "购物", en: "Going cheap", phonetic: "/ˈɡəʊɪŋ tʃiːp/", meaning: "打折出售", exampleEn: "These are going cheap today!", exampleCn: "这些今天打折！" },
+    { id: 176, category: "购物", en: "Bargain", phonetic: "/ˈbɑːɡɪn/", meaning: "便宜货/划算", exampleEn: "What a bargain!", exampleCn: "真划算！" },
+    { id: 177, category: "购物", en: "Rip off", phonetic: "/rɪp ɒf/", meaning: "宰客/坑钱", exampleEn: "$10 for water? What a rip off!", exampleCn: "10块钱一瓶水？宰客啊！" },
+    { id: 178, category: "购物", en: "Duty free", phonetic: "/ˈdjuːti friː/", meaning: "免税", exampleEn: "Let's check out the duty free.", exampleCn: "我们去看看免税店。" },
+    { id: 179, category: "购物", en: "Tax back", phonetic: "/tæks bæk/", meaning: "退税", exampleEn: "Can I claim tax back on this?", exampleCn: "这个能退税吗？" },
+    { id: 180, category: "购物", en: "EFTPOS", phonetic: "/ˈeftpɒs/", meaning: "刷卡支付", exampleEn: "Cash or EFTPOS?", exampleCn: "现金还是刷卡？" },
+    { id: 181, category: "购物", en: "Tap and go", phonetic: "/tæp ənd ɡəʊ/", meaning: "闪付", exampleEn: "Just tap and go with your card.", exampleCn: "用卡闪付就行。" },
+    { id: 182, category: "购物", en: "Sold out", phonetic: "/səʊld aʊt/", meaning: "卖完了", exampleEn: "Sorry, we're sold out.", exampleCn: "抱歉，卖完了。" },
+    { id: 183, category: "购物", en: "Back in stock", phonetic: "/bæk ɪn stɒk/", meaning: "补货了", exampleEn: "Your size is back in stock!", exampleCn: "你的尺码补货了！" },
+    { id: 184, category: "购物", en: "On special", phonetic: "/ɒn ˈspeʃl/", meaning: "特价", exampleEn: "These are on special today.", exampleCn: "这些今天特价。" },
+    { id: 185, category: "购物", en: "Two for one", phonetic: "/tuː fɔːr wʌn/", meaning: "买一送一", exampleEn: "It's two for one this week!", exampleCn: "这周买一送一！" },
+
+    // 186-200: 其他实用
+    { id: 186, category: "网络", en: "What's the WiFi password?", phonetic: "/wɒts ðə ˈwaɪfaɪ ˈpɑːswɜːd/", meaning: "WiFi密码是什么？", exampleEn: "Hey, what's the WiFi password here?", exampleCn: "嘿，这儿的WiFi密码是什么？" },
+    { id: 187, category: "网络", en: "The signal is weak.", phonetic: "/ðə ˈsɪɡnəl ɪz wiːk/", meaning: "信号不好", exampleEn: "The WiFi signal is weak in my room.", exampleCn: "我房间WiFi信号不好。" },
+    { id: 188, category: "电话", en: "I'll give you a bell.", phonetic: "/aɪl ɡɪv ju ə bel/", meaning: "我给你打电话", exampleEn: "I'll give you a bell later.", exampleCn: "我晚点给你打电话。" },
+    { id: 189, category: "电话", en: "Drop me a line.", phonetic: "/drɒp miː ə laɪn/", meaning: "给我发消息", exampleEn: "Drop me a line when you arrive.", exampleCn: "到了给我发消息。" },
+    { id: 190, category: "时间", en: "At sparrow's fart", phonetic: "/æt ˈspærəʊz fɑːrt/", meaning: "黎明/很早", exampleEn: "We left at sparrow's fart.", exampleCn: "我们黎明就出发了。" },
+    { id: 191, category: "时间", en: "Dark o'clock", phonetic: "/dɑːrk əˈklɒk/", meaning: "天还没亮", exampleEn: "I woke up at dark o'clock.", exampleCn: "我天还没亮就醒了。" },
+    { id: 192, category: "其他", en: "Call it a day", phonetic: "/kɔːl ɪt ə deɪ/", meaning: "收工", exampleEn: "Let's call it a day.", exampleCn: "我们收工吧。" },
+    { id: 193, category: "其他", en: "Give it a burl", phonetic: "/ɡɪv ɪt ə bɜːrl/", meaning: "试试看", exampleEn: "Give it a burl, mate!", exampleCn: "试试看，伙计！" },
+    { id: 194, category: "其他", en: "Having a yarn", phonetic: "/ˈhævɪŋ ə jɑːrn/", meaning: "闲聊", exampleEn: "We're just having a yarn.", exampleCn: "我们在闲聊呢。" },
+    { id: 195, category: "其他", en: "Like a stunned mullet", phonetic: "/laɪk ə stʌnd ˈmʌlɪt/", meaning: "目瞪口呆", exampleEn: "He stood there like a stunned mullet.", exampleCn: "他站在那里目瞪口呆。" },
+    { id: 196, category: "其他", en: "Flat out like a lizard drinking", phonetic: "/flæt aʊt laɪk ə ˈlɪzəd ˈdrɪŋkɪŋ/", meaning: "忙得不可开交", exampleEn: "Been flat out like a lizard drinking!", exampleCn: "忙得不可开交！" },
+    { id: 197, category: "其他", en: "Mad as a meat axe", phonetic: "/mæd æz ə miːt æks/", meaning: "疯了", exampleEn: "You're mad as a meat axe!", exampleCn: "你疯了！" },
+    { id: 198, category: "其他", en: "Straight to the pool room", phonetic: "/streɪt tuː ðə puːl ruːm/", meaning: "值得珍藏", exampleEn: "That's straight to the pool room!", exampleCn: "那个值得珍藏！" },
+    { id: 199, category: "告别", en: "Hooroo!", phonetic: "/huːˈruː/", meaning: "再见！", exampleEn: "Hooroo! See you next time!", exampleCn: "再见！下次见！" },
+    { id: 200, category: "感谢", en: "Thanks heaps!", phonetic: "/θæŋks hiːps/", meaning: "非常感谢！", exampleEn: "Thanks heaps for your help!", exampleCn: "非常感谢你的帮助！" }
+];
+
+// 常量定义
+const MODES = { LEARN: 'learn', REVIEW: 'review' };
+const PAGES = { STUDY: 'study', PROGRESS: 'progress' };
+const REVIEW_STEPS = { RECALL: 'recall', VERIFY: 'verify' };
+const RECALL_MODES = { EN: 'en', CN: 'cn' };
+const STATUS = { MASTERED: 'mastered', FUZZY: 'fuzzy', FORGOT: 'forgot', LEARNING: 'learning' };
+const DAILY_NEW_LIMIT = 15; // 每天新学15个
+
+// 艾宾浩斯遗忘曲线间隔（天）
+const REVIEW_INTERVALS = [1, 1, 3, 7, 14, 30]; // level 0-5对应的间隔
+
+// 全局调试标记
+console.log('✅ JS 文件已加载 - DEBUG v2');
+
+// 状态管理
+let currentIndex = 0;
+let currentMode = MODES.LEARN;
+let studyRecords = {}; // 保留兼容旧数据
+let phraseRecords = {}; // 新的短语记录系统 {id: {level, nextReviewDate, status}}
+let dailyStats = {}; // 每日统计 {date: {newLearned, reviewed, completed: [], viewed: []}}
+let todayCompleted = new Set(); // 今天已完成的短语ID（点了表情的）
+let todayViewed = new Set(); // 今天已浏览的新词ID（浏览过就算学了）
+let favorites = new Set(); // 收藏集合 - O(1) 查找
+let currentMonth = new Date();
+let reviewStep = REVIEW_STEPS.RECALL;
+let recallMode = RECALL_MODES.EN;
+
+// 缓存
+let todayStrCache = null;
+let todayPhrasesCache = null;
+let saveTimeout = null;
+
+// DOM 元素缓存
+const els = {};
+
+function init() {
+    // 确保每次初始化时清除缓存（避免日期变化问题）
+    clearTodayCache();
+    cacheElements();
+    loadData();
+
+    // 初始化今日统计结构
+    const today = getTodayStr();
+    if (!dailyStats[today]) {
+        dailyStats[today] = { newLearned: 0, reviewed: 0, completed: [], viewed: [] };
+    }
+
+    bindEvents();
+    renderSentence();
+    renderCalendar();
+    updateStats();
+}
+
+function cacheElements() {
+    els.studyPage = document.getElementById('studyPage');
+    els.progressPage = document.getElementById('progressPage');
+    els.modeLearn = document.getElementById('modeLearn');
+    els.modeReview = document.getElementById('modeReview');
+    els.learnButtons = document.getElementById('learnButtons');
+    els.recallSection = document.getElementById('recallSection');
+    els.verifySection = document.getElementById('verifySection');
+    els.prevBtn = document.getElementById('prevBtn');
+    els.nextBtn = document.getElementById('nextBtn');
+    els.navStudy = document.getElementById('navStudy');
+    els.navProgress = document.getElementById('navProgress');
+    els.audioBtn = document.getElementById('audioBtn');
+    els.favoriteBtn = document.getElementById('favoriteBtn');
+    els.favoritesBtn = document.getElementById('favoritesBtn');
+    els.favoritesOverlay = document.getElementById('favoritesOverlay');
+    els.favoritesClose = document.getElementById('favoritesClose');
+    els.favoritesList = document.getElementById('favoritesList');
+    els.prevMonth = document.getElementById('prevMonth');
+    els.nextMonth = document.getElementById('nextMonth');
+    els.hintOverlay = document.getElementById('hintOverlay');
+    els.hintClose = document.getElementById('hintClose');
+
+    // 句子内容
+    els.sentenceCard = document.getElementById('sentenceCard');
+    els.sentenceContent = document.getElementById('sentenceContent');
+    els.sentenceCategory = document.getElementById('sentenceCategory');
+    els.sentenceEn = document.getElementById('sentenceEn');
+    els.sentenceCn = document.getElementById('sentenceCn');
+    els.sentencePhonetic = document.getElementById('sentencePhonetic');
+    els.sentenceMeaning = document.getElementById('sentenceMeaning');
+    els.exampleEn = document.getElementById('exampleEn');
+    els.exampleCn = document.getElementById('exampleCn');
+    els.currentIndex = document.getElementById('currentIndex');
+    els.totalCount = document.getElementById('totalCount');
+    els.calendarMonth = document.getElementById('calendarMonth');
+    els.calendarGrid = document.getElementById('calendarGrid');
+    els.statStreak = document.getElementById('statStreak');
+    els.statTotal = document.getElementById('statTotal');
+    els.statMastered = document.getElementById('statMastered');
+    els.hintTitle = document.getElementById('hintTitle');
+    els.hintText = document.getElementById('hintText');
+    els.meaningBox = document.getElementById('meaningBox');
+    els.exampleBox = document.getElementById('exampleBox');
+}
+
+function bindEvents() {
+    els.navStudy.onclick = function() { showPage(PAGES.STUDY); };
+    els.navProgress.onclick = function() { showPage(PAGES.PROGRESS); };
+    els.modeLearn.onclick = function() { setMode(MODES.LEARN); };
+    els.modeReview.onclick = function() { setMode(MODES.REVIEW); };
+    els.prevBtn.onclick = prevSentence;
+    els.nextBtn.onclick = nextSentence;
+    els.audioBtn.onclick = playAudio;
+    els.favoriteBtn.onclick = toggleFavorite;
+    els.favoritesBtn.onclick = showFavorites;
+    els.favoritesClose.onclick = hideFavorites;
+    els.prevMonth.onclick = function() { changeMonth(-1); };
+    els.nextMonth.onclick = function() { changeMonth(1); };
+    els.hintClose.onclick = closeHint;
+    els.hintOverlay.onclick = function(e) { if (e.target === els.hintOverlay) closeHint(); };
+
+    // 点击页面任意位置显示答案（复习模式）- 排除按钮
+    els.studyPage.onclick = function(e) {
+        if (currentMode === MODES.REVIEW && reviewStep === REVIEW_STEPS.RECALL) {
+            // 如果点击的是按钮，不触发显示答案
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                return;
+            }
+            showAnswer();
+        }
+    };
+
+    // 评分按钮
+    document.querySelectorAll('.verify-btn').forEach(btn => {
+        btn.onclick = function() { markReview(this.dataset.status); };
+    });
+}
+
+function loadData() {
+    try {
+        const saved = localStorage.getItem('chainsaw_data_v4');
+        if (saved) {
+            const data = JSON.parse(saved);
+            phraseRecords = data.phraseRecords || {};
+            dailyStats = data.dailyStats || {};
+            favorites = new Set(data.favorites || []);
+
+            // 恢复今天的已完成列表 - 确保总是初始化为 Set
+            const today = getTodayStr();
+            todayCompleted = new Set(); // 先重置
+            todayViewed = new Set(); // 重置浏览记录
+
+            // 兼容旧数据：如果 dailyStats[today] 存在但没有 completed 数组，尝试从 phraseRecords 恢复
+            if (dailyStats[today]) {
+                if (!dailyStats[today].completed) {
+                    dailyStats[today].completed = [];
+                    // 从 phraseRecords 中找出今天复习过的短语
+                    for (const [id, record] of Object.entries(phraseRecords)) {
+                        if (record.lastReviewDate === today) {
+                            dailyStats[today].completed.push(parseInt(id));
+                        }
+                    }
+                }
+                if (!dailyStats[today].viewed) {
+                    dailyStats[today].viewed = [];
+                }
+            }
+
+            if (dailyStats[today] && dailyStats[today].completed && Array.isArray(dailyStats[today].completed)) {
+                dailyStats[today].completed.forEach(id => todayCompleted.add(id));
+            }
+            if (dailyStats[today] && dailyStats[today].viewed && Array.isArray(dailyStats[today].viewed)) {
+                dailyStats[today].viewed.forEach(id => todayViewed.add(id));
+            }
+
+            // 兼容旧数据（studyRecords 迁移到 phraseRecords）
+            if (data.studyRecords && Object.keys(phraseRecords).length === 0) {
+                migrateOldData(data.studyRecords);
+            }
+
+            // 恢复今天的第一句（优先未完成或今日计划中的）
+            const todayPlan = getTodayPhrases();
+            if (todayPlan.length > 0) {
+                // 找到第一个未完成的
+                const incomplete = todayPlan.find(idx => !todayCompleted.has(sentences[idx].id));
+                currentIndex = incomplete !== undefined ? incomplete : todayPlan[0];
+            } else if (data.currentIndex !== undefined && data.currentIndex >= 0 && data.currentIndex < sentences.length) {
+                currentIndex = data.currentIndex;
+            }
+        }
+    } catch (e) {
+        console.error('Load error:', e);
+    }
+}
+
+// 兼容旧数据迁移
+function migrateOldData(oldRecords) {
+    const today = getTodayStr();
+    for (const [id, record] of Object.entries(oldRecords)) {
+        const phraseId = parseInt(id);
+        const isMastered = record.status === STATUS.MASTERED;
+        phraseRecords[phraseId] = {
+            level: isMastered ? 3 : 1,
+            status: isMastered ? STATUS.MASTERED : STATUS.LEARNING,
+            nextReviewDate: today,
+            lastReviewDate: record.date || today,
+            reviewCount: 1,
+            firstLearnedDate: record.date || today
+        };
+    }
+    studyRecords = oldRecords; // 保留旧记录
+}
+
+function saveData() {
+    // 防抖：清除之前的定时器
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
+    }
+    // 延迟保存，减少频繁写入
+    saveTimeout = setTimeout(() => {
+        try {
+            // 确保每日统计中包含 Set 的数据
+            const today = getTodayStr();
+            if (!dailyStats[today]) {
+                dailyStats[today] = { newLearned: 0, reviewed: 0, completed: [], viewed: [] };
+            }
+            // 同步 todayCompleted 到 dailyStats
+            dailyStats[today].completed = Array.from(todayCompleted);
+            // 同步 todayViewed 到 dailyStats
+            dailyStats[today].viewed = Array.from(todayViewed);
+
+            localStorage.setItem('chainsaw_data_v4', JSON.stringify({
+                phraseRecords: phraseRecords,
+                dailyStats: dailyStats,
+                favorites: Array.from(favorites), // Set 转为 Array
+                currentIndex: currentIndex,
+                studyRecords: studyRecords // 保留兼容
+            }));
+        } catch (e) {
+            console.error('Save error:', e);
+        }
+        saveTimeout = null;
+    }, 300); // 300ms 防抖
+}
+
+function showPage(page) {
+    const isStudy = page === PAGES.STUDY;
+    els.studyPage.classList.toggle('active', isStudy);
+    els.progressPage.classList.toggle('active', !isStudy);
+    els.navStudy.classList.toggle('active', isStudy);
+    els.navProgress.classList.toggle('active', !isStudy);
+
+    if (isStudy) {
+        renderSentence();
+    } else {
+        renderCalendar();
+        updateStats();
+    }
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    reviewStep = REVIEW_STEPS.RECALL;
+    const isLearn = mode === MODES.LEARN;
+    els.modeLearn.classList.toggle('active', isLearn);
+    els.modeReview.classList.toggle('active', !isLearn);
+
+    if (isLearn) {
+        els.learnButtons.style.display = 'block';
+        els.recallSection.style.display = 'none';
+        els.verifySection.classList.remove('show');
+        showAllContent();
+    } else {
+        els.learnButtons.style.display = 'none';
+        els.recallSection.style.display = 'block';
+        els.verifySection.classList.remove('show');
+        setupRecallMode();
+    }
+}
+
+function setupRecallMode() {
+    reviewStep = REVIEW_STEPS.RECALL;
+    // 随机选择隐藏中文或英文，让用户回想
+    recallMode = Math.random() > 0.5 ? RECALL_MODES.EN : RECALL_MODES.CN;
+
+    if (recallMode === RECALL_MODES.EN) {
+        // 显示英文，隐藏中文
+        els.sentenceEn.classList.remove('hidden-content');
+        els.sentenceCn.classList.add('hidden-content');
+    } else {
+        // 显示中文，隐藏英文
+        els.sentenceEn.classList.add('hidden-content');
+        els.sentenceCn.classList.remove('hidden-content');
+    }
+
+    els.sentencePhonetic.style.display = 'none';
+    els.meaningBox.style.display = 'none';
+    els.exampleBox.style.display = 'none';
+    els.audioBtn.style.display = 'none';
+    els.recallSection.style.display = 'block';
+    els.verifySection.classList.remove('show');
+}
+
+function showAnswer() {
+    // 点击卡片显示答案，进入评分阶段
+    if (currentMode === MODES.REVIEW && reviewStep === REVIEW_STEPS.RECALL) {
+        reviewStep = REVIEW_STEPS.VERIFY;
+        els.recallSection.style.display = 'none';
+        els.verifySection.classList.add('show');
+        showAllContent();
+    }
+}
+
+function showAllContent() {
+    els.sentenceEn.classList.remove('hidden-content');
+    els.sentenceCn.classList.remove('hidden-content');
+    els.sentencePhonetic.style.display = 'block';
+    els.meaningBox.style.display = 'block';
+    els.exampleBox.style.display = 'block';
+    els.audioBtn.style.display = 'flex';
+}
+
+function renderSentence() {
+    const s = sentences[currentIndex];
+    const record = phraseRecords[s.id];
+    const today = getTodayStr();
+
+    // 如果是新词（从未学过的），记录为已浏览
+    if (!record && !todayViewed.has(s.id)) {
+        todayViewed.add(s.id);
+        // 初始化今日统计
+        if (!dailyStats[today]) {
+            dailyStats[today] = { newLearned: 0, reviewed: 0, completed: [], viewed: [] };
+        }
+        if (!dailyStats[today].viewed) {
+            dailyStats[today].viewed = [];
+        }
+        dailyStats[today].viewed.push(s.id);
+        saveData();
+        updateTodayProgress();
+    }
+
+    els.sentenceCategory.textContent = s.category;
+    els.sentenceEn.textContent = s.en;
+    els.sentenceCn.textContent = s.meaning.split('（')[0]; // 只显示主要意思
+    els.sentencePhonetic.textContent = s.phonetic;
+    els.sentenceMeaning.textContent = s.meaning;
+    els.exampleEn.textContent = '"' + s.exampleEn + '"';
+    els.exampleCn.textContent = s.exampleCn;
+
+    // 显示今日进度
+    const todayPlan = getTodayPhrases();
+    // 已完成数量 - 使用复用函数
+    const completedCount = getCompletedCount(todayPlan);
+    // 右上角显示：已完成/今日总任务
+    els.currentIndex.textContent = completedCount;
+    els.totalCount.textContent = todayPlan.length;
+
+    // 更新类别标签，显示是新学还是复习
+    if (record) {
+        if (record.nextReviewDate === today) {
+            els.sentenceCategory.textContent = s.category + ' · 今日复习';
+            els.sentenceCategory.style.color = 'var(--csm-orange)';
+        } else {
+            els.sentenceCategory.textContent = s.category + ' · 已学';
+            els.sentenceCategory.style.color = 'var(--csm-green)';
+        }
+    } else {
+        els.sentenceCategory.textContent = s.category + ' · 新词';
+        els.sentenceCategory.style.color = 'var(--csm-blue)';
+    }
+
+    els.prevBtn.disabled = currentIndex === 0;
+    els.nextBtn.disabled = currentIndex === sentences.length - 1;
+
+    updateFavoriteBtn();
+    updateTodayProgress();
+
+    // 如果在复习模式，重新设置回想
+    if (currentMode === MODES.REVIEW) {
+        setMode('review');
+    }
+}
+
+function prevSentence() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        saveData();
+        renderSentence();
+    }
+}
+
+function nextSentence() {
+    if (currentIndex < sentences.length - 1) {
+        currentIndex++;
+        saveData();
+        renderSentence();
+    }
+}
+
+// 获取今天的日期字符串（带缓存）
+function getTodayStr() {
+    if (todayStrCache) return todayStrCache;
+    const d = new Date();
+    todayStrCache = d.toISOString().split('T')[0];
+    return todayStrCache;
+}
+
+// 清除今日缓存（用于日期变化或新的一天）
+function clearTodayCache() {
+    todayStrCache = null;
+    todayPhrasesCache = null;
+}
+
+// 获取给定日期后n天的日期字符串
+function addDays(dateStr, days) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
+
+// 获取今天需要学习的短语（优先复习到期的，然后新学15个）
+function getTodayPhrases() {
+    // 使用缓存，避免重复计算
+    if (todayPhrasesCache) return todayPhrasesCache;
+
+    const today = getTodayStr();
+    const todayPhrases = [];
+    const newPhrases = [];
+    const reviewPhrases = [];
+
+    // 先找出今天到期的复习
+    for (let i = 0; i < sentences.length; i++) {
+        const record = phraseRecords[sentences[i].id];
+        if (record) {
+            if (record.nextReviewDate === today) {
+                reviewPhrases.push(i);
+            }
+        } else {
+            // 新词
+            newPhrases.push(i);
+        }
+    }
+
+    // 今天需要复习的优先
+    todayPhrases.push(...reviewPhrases);
+
+    // 然后补充新词（最多15个）
+    const todayStat = dailyStats[today] || { newLearned: 0, reviewed: 0 };
+    const remainingNew = DAILY_NEW_LIMIT - todayStat.newLearned;
+
+    if (remainingNew > 0 && newPhrases.length > 0) {
+        const toLearn = newPhrases.slice(0, remainingNew);
+        todayPhrases.push(...toLearn);
+    }
+
+    // 缓存结果
+    todayPhrasesCache = todayPhrases;
+    return todayPhrases;
+}
+
+// 获取已完成数量（复用逻辑）
+function getCompletedCount(todayPlan) {
+    if (!todayPlan) todayPlan = getTodayPhrases();
+    let count = 0;
+    for (const idx of todayPlan) {
+        if (todayCompleted.has(sentences[idx].id)) count++;
+    }
+    return count;
+}
+
+// 标记复习结果
+function markReview(status) {
+    const s = sentences[currentIndex];
+    const today = getTodayStr();
+
+    // 检查是否今天第一次学习这个短语
+    const isFirstTimeToday = !todayCompleted.has(s.id);
+
+    // 获取或创建记录
+    let record = phraseRecords[s.id];
+    let isNewPhrase = false;
+    if (!record) {
+        // 新词第一次学习
+        isNewPhrase = true;
+        record = {
+            level: 0,
+            status: STATUS.LEARNING,
+            nextReviewDate: addDays(today, REVIEW_INTERVALS[0]),
+            lastReviewDate: today,
+            reviewCount: 0,
+            firstLearnedDate: today
+        };
+        phraseRecords[s.id] = record;
+    }
+
+    // 初始化今日统计
+    if (!dailyStats[today]) {
+        dailyStats[today] = { newLearned: 0, reviewed: 0, completed: [], viewed: [] };
+    }
+    // 确保 completed 数组存在（兼容旧数据）
+    if (!dailyStats[today].completed) {
+        dailyStats[today].completed = [];
+    }
+    // 确保 viewed 数组存在（兼容旧数据）
+    if (!dailyStats[today].viewed) {
+        dailyStats[today].viewed = [];
+    }
+
+    // 如果是今天第一次完成这个短语，更新统计
+    if (isFirstTimeToday) {
+        todayCompleted.add(s.id);
+        dailyStats[today].completed.push(s.id);
+
+        if (isNewPhrase) {
+            dailyStats[today].newLearned++;
+        }
+        dailyStats[today].reviewed++;
+    }
+
+    // 根据评分更新记忆曲线
+    record.lastReviewDate = today;
+    record.reviewCount++;
+
+    if (status === STATUS.MASTERED) {
+        // 全对：升级
+        record.level = Math.min(record.level + 1, 5);
+        if (record.level >= 5) {
+            record.status = STATUS.MASTERED;
+        }
+    } else if (status === STATUS.FUZZY) {
+        // 模糊：保持当前level，但隔天再复习
+        // level不变
+    } else if (status === STATUS.FORGOT) {
+        // 错了：降级到0，重新学习
+        record.level = 0;
+        record.status = STATUS.LEARNING;
+    }
+
+    // 清除缓存，因为数据已变化
+    todayPhrasesCache = null;
+
+    // 计算下次复习日期
+    const interval = REVIEW_INTERVALS[record.level];
+    record.nextReviewDate = addDays(today, interval);
+
+    // 保存旧格式兼容
+    studyRecords[s.id] = {
+        status: status,
+        date: today,
+        en: s.en,
+        isReview: record.reviewCount > 0
+    };
+
+    // 获取今天的学习计划并找到下一句（未完成的）
+    const todayPlan = getTodayPhrases();
+    const incompleteTask = todayPlan.find(idx => !todayCompleted.has(sentences[idx].id));
+
+    if (incompleteTask !== undefined) {
+        // 还有未完成的任务
+        currentIndex = incompleteTask;
+    } else if (todayPlan.length > 0) {
+        // 今天任务全部完成
+        showHint('今日任务完成！', '明天继续加油～');
+        // 随机选一句已学的作为展示
+        const learnedIds = Object.keys(phraseRecords).map(Number);
+        if (learnedIds.length > 0) {
+            const randomId = learnedIds[Math.floor(Math.random() * learnedIds.length)];
+            currentIndex = sentences.findIndex(s => s.id === randomId);
+        }
+    } else {
+        // 没有今日任务，随机选一句
+        const learnedIds = Object.keys(phraseRecords).map(Number);
+        if (learnedIds.length > 0) {
+            const randomId = learnedIds[Math.floor(Math.random() * learnedIds.length)];
+            currentIndex = sentences.findIndex(s => s.id === randomId);
+        }
+    }
+
+    saveData();
+
+    if (currentMode === MODES.REVIEW) {
+        setMode('review');
+    }
+
+    renderSentence();
+    renderCalendar();
+    updateStats();
+}
+
+function playAudio() {
+    const s = sentences[currentIndex];
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(s.en);
+        utterance.lang = 'en-AU';
+        utterance.rate = 0.8;
+        els.audioBtn.classList.add('playing');
+        utterance.onend = function() {
+            els.audioBtn.classList.remove('playing');
+        };
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function toggleFavorite() {
+    const s = sentences[currentIndex];
+    const isFav = favorites.has(s.id);
+
+    if (!isFav) {
+        favorites.add(s.id);
+        showHint('已收藏 ⭐', '这句话已添加到收藏列表');
+    } else {
+        favorites.delete(s.id);
+        showHint('已取消收藏', '这句话已从收藏列表移除');
+    }
+
+    saveData();
+    updateFavoriteBtn();
+    setTimeout(closeHint, 800);
+}
+
+function updateFavoriteBtn() {
+    const isFav = favorites.has(sentences[currentIndex].id);
+    els.favoriteBtn.textContent = isFav ? '★' : '☆';
+    els.favoriteBtn.classList.toggle('active', isFav);
+}
+
+function showFavorites() {
+    els.favoritesList.innerHTML = '';
+
+    if (favorites.size === 0) {
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'color:white;text-align:center;padding:20px;';
+        emptyMsg.textContent = '还没有收藏任何句子';
+        els.favoritesList.appendChild(emptyMsg);
+    } else {
+        favorites.forEach(id => {
+            const s = sentences.find(x => x.id === id);
+            if (s) {
+                const item = document.createElement('div');
+                item.className = 'favorite-item';
+
+                const enDiv = document.createElement('div');
+                enDiv.className = 'favorite-item-en';
+                enDiv.textContent = s.en;
+
+                const cnDiv = document.createElement('div');
+                cnDiv.className = 'favorite-item-cn';
+                cnDiv.textContent = s.meaning;
+
+                item.appendChild(enDiv);
+                item.appendChild(cnDiv);
+
+                item.onclick = function() {
+                    currentIndex = sentences.indexOf(s);
+                    renderSentence();
+                    hideFavorites();
+                    showPage(PAGES.STUDY);
+                };
+                els.favoritesList.appendChild(item);
+            }
+        });
+    }
+
+    els.favoritesOverlay.classList.add('show');
+}
+
+function hideFavorites() {
+    els.favoritesOverlay.classList.remove('show');
+}
+
+function showHint(title, text) {
+    els.hintTitle.textContent = title;
+    els.hintText.textContent = text;
+    els.hintOverlay.classList.add('show');
+}
+
+function closeHint() {
+    els.hintOverlay.classList.remove('show');
+}
+
+// 计算某日期需要复习的短语数量
+function getReviewCountForDate(dateStr) {
+    let count = 0;
+    for (const record of Object.values(phraseRecords)) {
+        if (record.nextReviewDate === dateStr) {
+            count++;
+        }
+    }
+    return count;
+}
+
+function updateStats() {
+    const today = getTodayStr();
+    const todayStat = dailyStats[today] || { newLearned: 0, reviewed: 0 };
+
+    // 已掌握数量
+    const mastered = Object.values(phraseRecords).filter(r => r.status === STATUS.MASTERED).length;
+    // 已学总数（包括学习中）
+    const total = Object.keys(phraseRecords).length;
+    // 今天待复习数
+    const todayReview = getReviewCountForDate(today);
+
+    // 连续天数计算（基于dailyStats）
+    const dates = Object.keys(dailyStats).sort();
+    let streak = 0;
+
+    // 检查今天或昨天是否有学习
+    const hasToday = dates.includes(today);
+    const yesterday = addDays(today, -1);
+    const hasYesterday = dates.includes(yesterday);
+
+    if (hasToday || hasYesterday) {
+        streak = 1;
+        // 从昨天往前检查
+        let checkDate = yesterday;
+        while (dates.includes(checkDate)) {
+            streak++;
+            checkDate = addDays(checkDate, -1);
+        }
+    }
+
+    els.statStreak.textContent = streak;
+    els.statTotal.textContent = total;
+    els.statMastered.textContent = mastered;
+
+    // 更新今日进度显示（如果存在）
+    updateTodayProgress();
+}
+
+// 更新今日学习进度显示
+function updateTodayProgress() {
+    const today = getTodayStr();
+    const todayStat = dailyStats[today] || { newLearned: 0, reviewed: 0, viewed: [] };
+    const todayReview = getReviewCountForDate(today);
+
+    // 检查是否已有今日进度元素
+    let progressEl = document.getElementById('todayProgress');
+    if (!progressEl) {
+        progressEl = document.createElement('div');
+        progressEl.id = 'todayProgress';
+        progressEl.className = 'today-progress';
+        progressEl.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText"></div>
+        `;
+        // 插入到学习卡片上方
+        const card = document.getElementById('sentenceCard');
+        if (card && card.parentNode) {
+            card.parentNode.insertBefore(progressEl, card);
+        }
+    }
+
+    // 今日进度：已完成数 / 今日全部任务数
+    const todayPlan = getTodayPhrases();
+    const completedCount = getCompletedCount(todayPlan);
+    const total = todayPlan.length;
+    const percent = total > 0 ? (completedCount / total * 100) : 100;
+
+    // 新学进度：已浏览数 / 15（浏览过就算学了）
+    const viewedCount = todayStat.viewed ? todayStat.viewed.length : 0;
+
+    const fill = document.getElementById('progressFill');
+    const text = document.getElementById('progressText');
+    if (fill) fill.style.width = percent + '%';
+    if (text) text.textContent = `今日进度: ${completedCount}/${total} | 复习${todayReview} | 新学${viewedCount}/15`;
+}
+
+function renderCalendar() {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    els.calendarMonth.textContent = year + '年' + (month + 1) + '月';
+
+    els.calendarGrid.innerHTML = '';
+
+    const days = ['日', '一', '二', '三', '四', '五', '六'];
+    days.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'calendar-day-header';
+        div.textContent = d;
+        els.calendarGrid.appendChild(div);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayDate = new Date();
+    const todayDay = todayDate.getDate();
+    const isCurrentMonth = todayDate.getMonth() === month && todayDate.getFullYear() === year;
+
+    for (let i = 0; i < firstDay; i++) {
+        const div = document.createElement('div');
+        div.className = 'calendar-day empty';
+        els.calendarGrid.appendChild(div);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const div = document.createElement('div');
+        div.className = 'calendar-day';
+
+        // 构造日期字符串 YYYY-MM-DD
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // 计算该日期需要复习的数量
+        const reviewCount = getReviewCountForDate(dateStr);
+
+        // 获取该日期的学习统计
+        const stat = dailyStats[dateStr];
+        const hasLearn = stat && stat.newLearned > 0;
+        const hasReviewDone = stat && stat.reviewed > 0;
+
+        let dayClass = '';
+        if (hasLearn && hasReviewDone) {
+            dayClass = 'has-both';
+        } else if (hasLearn) {
+            dayClass = 'has-learn';
+        } else if (hasReviewDone) {
+            dayClass = 'has-review';
+        }
+
+        if (isCurrentMonth && day === todayDay) {
+            dayClass += ' today';
+        }
+
+        div.className = 'calendar-day ' + dayClass;
+
+        // 创建日期数字
+        const dayNum = document.createElement('div');
+        dayNum.className = 'day-number';
+        dayNum.textContent = day;
+        div.appendChild(dayNum);
+
+        // 显示复习数量（如果有）
+        if (reviewCount > 0) {
+            const badge = document.createElement('div');
+            badge.className = 'review-badge';
+            badge.textContent = reviewCount;
+            badge.style.cssText = `
+                position: absolute;
+                top: 1px;
+                right: 1px;
+                background: var(--csm-orange);
+                color: white;
+                font-size: 0.45rem;
+                font-weight: 900;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--csm-black);
+            `;
+            div.appendChild(badge);
+        }
+
+        // 创建标记点（已完成的）
+        if (hasLearn || hasReviewDone) {
+            const marks = document.createElement('div');
+            marks.className = 'day-marks';
+            if (hasLearn) {
+                const mark = document.createElement('div');
+                mark.className = 'day-mark';
+                mark.style.background = 'var(--csm-green)';
+                marks.appendChild(mark);
+            }
+            if (hasReviewDone) {
+                const mark = document.createElement('div');
+                mark.className = 'day-mark';
+                mark.style.background = 'var(--csm-blue)';
+                marks.appendChild(mark);
+            }
+            div.appendChild(marks);
+        }
+
+        els.calendarGrid.appendChild(div);
+    }
+}
+
+function changeMonth(delta) {
+    currentMonth.setMonth(currentMonth.getMonth() + delta);
+    renderCalendar();
+}
+
+init();
+    </script>
+</body>
+</html>
