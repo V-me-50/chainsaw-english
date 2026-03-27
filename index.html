@@ -1042,21 +1042,13 @@
                 </div>
 
                 <!-- 学习模式按钮 -->
-                <div class="button-area" id="learnButtons">
-                    <div class="learn-buttons">
-                        <button class="nav-arrow-btn" id="prevBtn">← 上一个</button>
-                        <button class="nav-arrow-btn" id="nextBtn">下一个 →</button>
-                    </div>
+                <!-- 学习模式：上下句按钮 -->
+                <div class="button-area learn-buttons" id="learnButtons">
+                    <button class="nav-arrow-btn" id="prevBtn">← 上一个</button>
+                    <button class="nav-arrow-btn" id="nextBtn">下一个 →</button>
                 </div>
 
-                <!-- 复习模式 - 点击提示 -->
-                <div class="button-area recall-section" id="recallSection">
-                    <div class="recall-click-area">
-                        <div class="recall-hint">👆 点击任意位置查看答案</div>
-                    </div>
-                </div>
-
-                <!-- 复习模式 - 评分阶段 -->
+                <!-- 复习模式：评分按钮（初始隐藏） -->
                 <div class="button-area verify-section" id="verifySection">
                     <div class="verify-buttons">
                         <button class="verify-btn mastered" data-status="mastered" aria-label="全对">😎</button>
@@ -1064,6 +1056,9 @@
                         <button class="verify-btn forgot" data-status="forgot" aria-label="错了">😵</button>
                     </div>
                 </div>
+
+                <!-- 复习模式：底部小字提示 -->
+                <div class="recall-hint-text" id="recallHintText" style="display: none; text-align: center; font-size: 0.7rem; color: #888; margin-top: 8px;">点击卡片查看答案</div>
             </div>
 
             <!-- 进度页面 -->
@@ -1480,8 +1475,8 @@ function cacheElements() {
     els.modeLearn = document.getElementById('modeLearn');
     els.modeReview = document.getElementById('modeReview');
     els.learnButtons = document.getElementById('learnButtons');
-    els.recallSection = document.getElementById('recallSection');
     els.verifySection = document.getElementById('verifySection');
+    els.recallHintText = document.getElementById('recallHintText');
     els.prevBtn = document.getElementById('prevBtn');
     els.nextBtn = document.getElementById('nextBtn');
     els.navStudy = document.getElementById('navStudy');
@@ -1793,12 +1788,12 @@ function setMode(mode) {
 
     if (isLearn) {
         els.learnButtons.style.display = 'block';
-        els.recallSection.style.display = 'none';
+        els.recallHintText.style.display = 'none';
         els.verifySection.classList.remove('show');
         showAllContent();
     } else {
         els.learnButtons.style.display = 'none';
-        els.recallSection.style.display = 'block';
+        els.recallHintText.style.display = 'block';
         els.verifySection.classList.remove('show');
         setupRecallMode();
     }
@@ -1823,7 +1818,7 @@ function setupRecallMode() {
     els.meaningBox.style.display = 'none';
     els.exampleBox.style.display = 'none';
     els.audioBtn.style.display = 'none';
-    els.recallSection.style.display = 'block';
+    els.recallHintText.style.display = 'block';
     els.verifySection.classList.remove('show');
 }
 
@@ -1831,7 +1826,7 @@ function showAnswer() {
     // 点击卡片显示答案，进入评分阶段
     if (currentMode === MODES.REVIEW && reviewStep === REVIEW_STEPS.RECALL) {
         reviewStep = REVIEW_STEPS.VERIFY;
-        els.recallSection.style.display = 'none';
+        els.recallHintText.style.display = 'none';
         els.verifySection.classList.add('show');
         showAllContent();
     }
