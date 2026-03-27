@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Chainsaw English - DEBUG v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Bangers&display=swap" rel="stylesheet">
     <style>
@@ -30,14 +30,16 @@
             font-family: 'Noto Sans SC', sans-serif;
             background: var(--csm-black);
             color: var(--csm-black);
-            height: 100vh;
+            height: 100%;
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
         }
 
         .app-frame {
             width: 100%;
-            height: 100vh;
+            height: 100%;
+            height: 100dvh;
             max-width: 480px;
             margin: 0 auto;
             background: var(--csm-white);
@@ -45,6 +47,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
         .manga-bg {
@@ -77,6 +80,7 @@
             position: relative;
             overflow: hidden;
             z-index: 2;
+            min-height: 0;
         }
 
         .page {
@@ -87,9 +91,10 @@
             height: 100%;
             display: none;
             flex-direction: column;
-            padding: 12px;
+            padding: 8px 12px 12px 12px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
         }
 
         .page.active {
@@ -101,9 +106,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
             border-bottom: 3px solid var(--csm-black);
+            flex-shrink: 0;
         }
 
         .mode-toggle {
@@ -162,13 +168,14 @@
         .sentence-card {
             background: white;
             border: 3px solid var(--csm-black);
-            padding: 14px;
-            margin-bottom: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
             position: relative;
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
+            overflow-y: auto;
         }
 
         .sentence-card::after {
@@ -215,11 +222,11 @@
         .sentence-content {
             background: var(--csm-black);
             border: 3px solid var(--csm-black);
-            padding: 14px;
+            padding: 12px 10px;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             position: relative;
-            min-height: 100px;
+            min-height: 80px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -277,19 +284,20 @@
         }
 
         .audio-btn {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border: 3px solid var(--csm-black);
             border-radius: 50%;
             background: var(--csm-orange);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
+            margin: 0 auto 8px;
             cursor: pointer;
             position: relative;
             box-shadow: 3px 3px 0 var(--csm-black);
             transition: all 0.1s;
+            flex-shrink: 0;
         }
 
         .audio-btn:active {
@@ -370,15 +378,17 @@
 
         .learn-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            margin-top: auto;
+            flex-shrink: 0;
         }
 
         .nav-arrow-btn {
             flex: 1;
-            padding: 12px;
+            padding: 10px 8px;
             border: 3px solid var(--csm-black);
             background: white;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 900;
             cursor: pointer;
             font-family: 'Noto Sans SC', sans-serif;
@@ -387,7 +397,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .nav-arrow-btn:active {
@@ -725,9 +735,11 @@
         .bottom-nav {
             display: flex;
             background: var(--csm-black);
-            padding: 0;
+            padding: 0 0 env(safe-area-inset-bottom) 0;
             z-index: 100;
             height: 56px;
+            height: calc(56px + env(safe-area-inset-bottom));
+            flex-shrink: 0;
         }
 
         .nav-btn {
