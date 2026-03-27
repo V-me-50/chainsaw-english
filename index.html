@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Chainsaw English - DEBUG v2</title>
+    <title>Hello 澳洲 - 澳洲旅游英语</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Bangers&display=swap" rel="stylesheet">
     <style>
         * {
@@ -1128,6 +1128,12 @@
                 </svg>
                 <div class="nav-label">进度</div>
             </button>
+            <button class="nav-btn" id="navUser">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <div class="nav-label" id="userLabel">用户</div>
+            </button>
         </div>
     </div>
 
@@ -1145,6 +1151,18 @@
         <button class="favorites-close" id="favoritesClose">×</button>
         <div class="favorites-header">MY FAVORITES</div>
         <div id="favoritesList"></div>
+    </div>
+
+    <!-- 用户切换弹窗 -->
+    <div class="favorites-overlay" id="userOverlay" style="display: none;">
+        <button class="favorites-close" id="userClose">×</button>
+        <div class="favorites-header">切换用户</div>
+        <div style="padding: 20px;">
+            <div style="margin-bottom: 15px; color: #666; font-size: 0.85rem;">当前用户：<span id="currentUserName" style="font-weight: 700; color: var(--csm-orange);">-</span></div>
+            <input type="text" id="newUsername" placeholder="输入新用户名" style="width: 100%; padding: 12px; border: 2px solid var(--csm-black); font-size: 1rem; margin-bottom: 15px; box-sizing: border-box;">
+            <button id="switchUserBtn" style="width: 100%; padding: 14px; background: var(--csm-orange); color: white; border: 3px solid var(--csm-black); font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 3px 3px 0 var(--csm-black);">切换用户</button>
+            <div id="userList" style="margin-top: 20px;"></div>
+        </div>
     </div>
 
     <script>
@@ -1413,14 +1431,36 @@ let todayStrCache = null;
 let todayPhrasesCache = null;
 let saveTimeout = null;
 
+// 用户管理
+let currentUser = localStorage.getItem('hello_au_current_user') || '';
+const STORAGE_PREFIX = 'hello_au_data_';
+
+// 获取当前用户的 storage key
+function getStorageKey() {
+    return STORAGE_PREFIX + (currentUser || 'default');
+}
+
 // DOM 元素缓存
 const els = {};
 
 function init() {
+    // 检查是否设置了用户名
+    if (!currentUser) {
+        const name = prompt('欢迎使用 Hello 澳洲！\n请输入你的用户名（如：小明）：');
+        if (name && name.trim()) {
+            currentUser = name.trim();
+            localStorage.setItem('hello_au_current_user', currentUser);
+        } else {
+            currentUser = '游客' + Math.floor(Math.random() * 10000);
+            localStorage.setItem('hello_au_current_user', currentUser);
+        }
+    }
+
     // 确保每次初始化时清除缓存（避免日期变化问题）
     clearTodayCache();
     cacheElements();
     loadData();
+    updateUserDisplay();
 
     // 初始化今日统计结构
     const today = getTodayStr();
@@ -1478,6 +1518,106 @@ function cacheElements() {
     els.hintText = document.getElementById('hintText');
     els.meaningBox = document.getElementById('meaningBox');
     els.exampleBox = document.getElementById('exampleBox');
+    els.navUser = document.getElementById('navUser');
+    els.userLabel = document.getElementById('userLabel');
+    els.userOverlay = document.getElementById('userOverlay');
+    els.userClose = document.getElementById('userClose');
+    els.currentUserName = document.getElementById('currentUserName');
+    els.newUsername = document.getElementById('newUsername');
+    els.switchUserBtn = document.getElementById('switchUserBtn');
+    els.userList = document.getElementById('userList');
+}
+
+// 更新用户显示
+function updateUserDisplay() {
+    if (els.userLabel) {
+        // 截取前4个字符显示
+        els.userLabel.textContent = currentUser ? currentUser.slice(0, 4) : '用户';
+    }
+    if (els.currentUserName) {
+        els.currentUserName.textContent = currentUser || '-';
+    }
+}
+
+// 显示用户切换弹窗
+function showUserOverlay() {
+    if (els.userOverlay) {
+        els.userOverlay.style.display = 'block';
+        updateUserDisplay();
+        renderUserList();
+    }
+}
+
+// 隐藏用户切换弹窗
+function hideUserOverlay() {
+    if (els.userOverlay) {
+        els.userOverlay.style.display = 'none';
+    }
+}
+
+// 切换用户
+function switchUser(newName) {
+    if (!newName || !newName.trim()) return;
+    newName = newName.trim();
+    if (newName === currentUser) return;
+
+    // 保存当前用户数据
+    saveData();
+
+    // 切换到新用户
+    currentUser = newName;
+    localStorage.setItem('hello_au_current_user', currentUser);
+
+    // 清空当前数据
+    phraseRecords = {};
+    dailyStats = {};
+    todayCompleted = new Set();
+    todayViewed = new Set();
+    favorites = new Set();
+    currentIndex = 0;
+
+    // 加载新用户数据
+    loadData();
+    updateUserDisplay();
+    renderSentence();
+    renderCalendar();
+    updateStats();
+
+    alert(`已切换到用户：${currentUser}`);
+    hideUserOverlay();
+}
+
+// 渲染用户列表
+function renderUserList() {
+    if (!els.userList) return;
+
+    // 获取所有用户
+    const users = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX)) {
+            const userName = key.replace(STORAGE_PREFIX, '');
+            users.push(userName);
+        }
+    }
+
+    if (users.length === 0) {
+        els.userList.innerHTML = '<div style="color: #999; font-size: 0.8rem;">暂无其他用户</div>';
+        return;
+    }
+
+    let html = '<div style="font-size: 0.85rem; font-weight: 700; margin-bottom: 10px;">已有用户：</div>';
+    users.forEach(user => {
+        const isCurrent = user === currentUser;
+        html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: ${isCurrent ? '#e8f5e9' : '#f5f5f5'}; border: 2px solid var(--csm-black); margin-bottom: 6px; cursor: ${isCurrent ? 'default' : 'pointer'};"
+                 onclick="${isCurrent ? '' : `switchUser('${user}')`}">
+                <span style="font-weight: ${isCurrent ? '700' : '400'};">${user} ${isCurrent ? '(当前)' : ''}</span>
+                ${!isCurrent ? '<span style="color: var(--csm-blue); font-size: 0.75rem;">点击切换</span>' : ''}
+            </div>
+        `;
+    });
+    els.userList.innerHTML = html;
 }
 
 function bindEvents() {
@@ -1495,6 +1635,15 @@ function bindEvents() {
     els.nextMonth.onclick = function() { changeMonth(1); };
     els.hintClose.onclick = closeHint;
     els.hintOverlay.onclick = function(e) { if (e.target === els.hintOverlay) closeHint(); };
+    if (els.navUser) els.navUser.onclick = showUserOverlay;
+    if (els.userClose) els.userClose.onclick = hideUserOverlay;
+    if (els.switchUserBtn) els.switchUserBtn.onclick = function() {
+        const name = els.newUsername.value;
+        if (name && name.trim()) {
+            switchUser(name.trim());
+            els.newUsername.value = '';
+        }
+    };
 
     // 点击页面任意位置显示答案（复习模式）- 排除按钮
     els.studyPage.onclick = function(e) {
@@ -1515,7 +1664,7 @@ function bindEvents() {
 
 function loadData() {
     try {
-        const saved = localStorage.getItem('chainsaw_data_v4');
+        const saved = localStorage.getItem(getStorageKey());
         if (saved) {
             const data = JSON.parse(saved);
             phraseRecords = data.phraseRecords || {};
@@ -1606,7 +1755,7 @@ function saveData() {
             // 同步 todayViewed 到 dailyStats
             dailyStats[today].viewed = Array.from(todayViewed);
 
-            localStorage.setItem('chainsaw_data_v4', JSON.stringify({
+            localStorage.setItem(getStorageKey(), JSON.stringify({
                 phraseRecords: phraseRecords,
                 dailyStats: dailyStats,
                 favorites: Array.from(favorites), // Set 转为 Array
